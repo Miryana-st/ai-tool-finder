@@ -89,14 +89,14 @@ export async function getCsrfCookie(): Promise<void> {
 }
 
 export async function login(email: string, password: string): Promise<void> {
-  await apiFetch("/login", {
+  await apiFetch("/api/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch("/logout", { method: "POST" });
+  await apiFetch("/api/logout", { method: "POST" });
 }
 
 // Returns null when there is no active session (401).

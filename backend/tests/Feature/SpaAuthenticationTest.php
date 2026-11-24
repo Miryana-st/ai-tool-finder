@@ -56,7 +56,7 @@ class SpaAuthenticationTest extends TestCase
         ]);
 
         $this->withHeaders($this->spaHeaders())
-            ->postJson('/login', [
+            ->postJson('/api/login', [
                 'email' => 'designer@ai-finder.test',
                 'password' => 'password',
             ])
@@ -94,7 +94,7 @@ class SpaAuthenticationTest extends TestCase
         User::factory()->create(['email' => 'qa@ai-finder.test']);
 
         $this->withHeaders($this->spaHeaders())
-            ->postJson('/login', [
+            ->postJson('/api/login', [
                 'email' => 'qa@ai-finder.test',
                 'password' => 'wrong-password',
             ])
@@ -107,7 +107,7 @@ class SpaAuthenticationTest extends TestCase
     public function test_login_requires_email_and_password(): void
     {
         $this->withHeaders($this->spaHeaders())
-            ->postJson('/login', [])
+            ->postJson('/api/login', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email', 'password']);
     }
@@ -126,7 +126,7 @@ class SpaAuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->withHeaders($this->spaHeaders())
-            ->postJson('/logout')
+            ->postJson('/api/logout')
             ->assertNoContent();
 
         $this->assertGuest('web');
@@ -140,12 +140,12 @@ class SpaAuthenticationTest extends TestCase
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             $this->withHeaders($this->spaHeaders())
-                ->postJson('/login', $credentials)
+                ->postJson('/api/login', $credentials)
                 ->assertUnprocessable();
         }
 
         $this->withHeaders($this->spaHeaders())
-            ->postJson('/login', $credentials)
+            ->postJson('/api/login', $credentials)
             ->assertTooManyRequests();
 
         RateLimiter::clear('pm@ai-finder.test|127.0.0.1');
