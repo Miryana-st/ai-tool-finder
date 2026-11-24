@@ -59,12 +59,31 @@ class UserRoleTest extends TestCase
 
     public function test_every_role_has_a_label(): void
     {
-        $this->assertSame('Owner', Role::Owner->label());
+        $this->assertSame('Собственик', Role::Owner->label());
         $this->assertSame('QA', Role::Qa->label());
         $this->assertSame('Дизайнер', Role::Designer->label());
 
         foreach (Role::cases() as $role) {
             $this->assertNotSame('', $role->label());
+        }
+    }
+
+    public function test_every_role_has_a_menu_with_unique_keys(): void
+    {
+        foreach (Role::cases() as $role) {
+            $menu = $role->menu();
+
+            $this->assertNotEmpty($menu, "Role [{$role->value}] has no menu items.");
+
+            foreach ($menu as $item) {
+                $this->assertSame(['key', 'label', 'href'], array_keys($item));
+                $this->assertNotSame('', $item['key']);
+                $this->assertNotSame('', $item['label']);
+                $this->assertNull($item['href']);
+            }
+
+            $keys = array_column($menu, 'key');
+            $this->assertSame($keys, array_unique($keys), "Role [{$role->value}] has duplicate menu keys.");
         }
     }
 
