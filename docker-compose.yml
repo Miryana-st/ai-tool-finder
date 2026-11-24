@@ -32,9 +32,44 @@ services:
     image: node:22-alpine
     container_name: ai-tool-finder-node
     working_dir: /app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Needed for hot reload through a Windows bind mount
+      WATCHPACK_POLLING: "true"
     volumes:
       - ./frontend:/app
-    command: tail -f /dev/null
+    # Waits idle until the Next.js app exists (see issue #5)
+    command: >
+      sh -c "if [ -f package.json ]; then npm install && npm run dev -- -H 0.0.0.0;
+      else echo 'frontend/ is empty - see issue #5'; tail -f /dev/null; fi"
+    networks:
+      - ai-tool-finder-network
+
+  queue:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: ai-tool-finder-queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    command: php artisan queue:work --tries=3 --timeout=90
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ai-tool-finder-network
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: ai-tool-finder-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # SMTP
     networks:
       - ai-tool-finder-network
 
