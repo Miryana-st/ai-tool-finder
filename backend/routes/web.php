@@ -1,13 +1,4 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
+// The backend is API-only: the UI lives in the Next.js frontend.
+// Fortify registers its auth endpoints under /api (see config/fortify.php).

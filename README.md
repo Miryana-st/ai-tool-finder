@@ -80,7 +80,7 @@ The `queue` container restarts until step 3 is done; this is expected on the fir
 
 | What             | URL                                         |
 |------------------|---------------------------------------------|
-| Laravel backend  | http://localhost:8000                       |
+| Laravel API      | http://localhost:8000 (JSON only, no pages) |
 | Next.js frontend | http://localhost:3000                       |
 | Mailpit (emails) | http://localhost:8025                       |
 | MySQL            | `localhost:3307` (user `ai_finder_user`)    |
@@ -101,8 +101,9 @@ docker compose down               # stop containers (database data is kept)
 ## Development Status
 
 - ✅ Docker environment (app, nginx, MySQL, queue, Node, Mailpit)
-- ✅ Laravel with Fortify login
+- ✅ API-only Laravel backend with Fortify auth endpoints under `/api`
 - ✅ User roles with seeded sample users
-- ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/login`, `/logout`, `GET /api/user`)
+- ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/api/login`, `/api/logout`, `GET /api/user`, `GET /api/dashboard`)
 - ✅ Next.js frontend layout (logo, login button, clock, user ID)
-- 🚧 Next.js login and dashboard — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
+- ✅ Next.js login and role-based dashboard
+- 🚧 Single entry point via nginx (#19) — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
