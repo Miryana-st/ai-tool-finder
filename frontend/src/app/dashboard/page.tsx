@@ -1,12 +1,13 @@
 import DashboardGreeting from "@/components/DashboardGreeting";
+import DashboardMenu from "@/components/DashboardMenu";
 import RequireAuth from "@/components/RequireAuth";
 
-// The role-based menu comes with #7.
 export default function DashboardPage() {
   return (
     <RequireAuth>
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-6">
         <DashboardGreeting />
+        <DashboardMenu />
       </section>
     </RequireAuth>
   );
