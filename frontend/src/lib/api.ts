@@ -22,7 +22,8 @@ export type Dashboard = {
 
 export type ValidationErrors = Record<string, string[]>;
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Empty by default: nginx serves the API from the same origin as the frontend.
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   constructor(

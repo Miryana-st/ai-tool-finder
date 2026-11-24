@@ -12,7 +12,7 @@ class SpaAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const FRONTEND_ORIGIN = 'http://localhost:3000';
+    private const FRONTEND_ORIGIN = 'http://localhost';
 
     /**
      * Headers a browser sends from the Next.js frontend.
