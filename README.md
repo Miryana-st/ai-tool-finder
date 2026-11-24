@@ -8,7 +8,7 @@ AI-Tool-Finder is a web application built with Laravel and Next.js, designed to 
 - PHP 8.3
 - Laravel 13
 - Laravel Fortify
-- Laravel Sanctum (planned, see #3)
+- Laravel Sanctum (SPA cookie authentication)
 - MySQL 8.4
 
 ### Frontend
@@ -98,4 +98,6 @@ docker compose down               # stop containers (database data is kept)
 
 - ✅ Docker environment (app, nginx, MySQL, queue, Node, Mailpit)
 - ✅ Laravel with Fortify login
-- 🚧 User roles, Sanctum SPA authentication, dashboard, Next.js frontend — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
+- ✅ User roles with seeded sample users
+- ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/login`, `/logout`, `GET /api/user`)
+- 🚧 Dashboard, Next.js frontend — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
