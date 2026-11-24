@@ -4,7 +4,7 @@ services:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
-    container_name: ai-finder-app
+    container_name: ai-tool-finder-app
     working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
@@ -12,11 +12,11 @@ services:
       db:
         condition: service_healthy
     networks:
-      - ai-finder-network
+      - ai-tool-finder-network
 
   nginx:
     image: nginx:alpine
-    container_name: ai-finder-nginx
+    container_name: ai-tool-finder-nginx
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -26,21 +26,21 @@ services:
     depends_on:
       - app
     networks:
-      - ai-finder-network
+      - ai-tool-finder-network
 
   node:
     image: node:22-alpine
-    container_name: ai-finder-node
+    container_name: ai-tool-finder-node
     working_dir: /app
     volumes:
       - ./frontend:/app
     command: tail -f /dev/null
     networks:
-      - ai-finder-network
+      - ai-tool-finder-network
 
   db:
     image: mysql:8.4
-    container_name: ai-finder-db
+    container_name: ai-tool-finder-db
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ai_finder
@@ -57,11 +57,12 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - ai-finder-network
+      - ai-tool-finder-network
 
 volumes:
   mysql_data:
+    name: ai-finder_mysql_data # keeps existing DB data regardless of folder name
 
 networks:
-  ai-finder-network:
+  ai-tool-finder-network:
     driver: bridge

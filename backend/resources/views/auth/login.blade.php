@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AI-Finder</title>
+    <title>Login | AI-Tool-Finder</title>
 </head>
 <body>
 
-    <h1>Welcome to AI-Finder</h1>
+    <h1>Welcome to AI-Tool-Finder</h1>
     <p>Sign in to your account</p>
 
     @if (session('status'))

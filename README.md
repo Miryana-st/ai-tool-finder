@@ -1,7 +1,7 @@
 
-# AI-Finder
+# AI-Tool-Finder
 
-AI-Finder is a web application built with Laravel and Next.js, designed to help users discover and work with AI-related tools and resources.
+AI-Tool-Finder is a web application built with Laravel and Next.js, designed to help users discover and work with AI-related tools and resources.
 
 ## Tech Stack
 
@@ -24,7 +24,7 @@ AI-Finder is a web application built with Laravel and Next.js, designed to help 
 ## Project Structure
 
 ```text
-AI-Finder/
+AI-Tool-Finder/
 ├── backend/              # Laravel application
 ├── frontend/             # Next.js application
 ├── nginx/                # Nginx configuration
@@ -49,7 +49,7 @@ Clone the repository:
 
 ```bash
 git clone <repository-url>
-cd AI-Finder
+cd AI-Tool-Finder
 ```
 
 Build and start Docker containers:
