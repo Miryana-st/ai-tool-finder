@@ -39,7 +39,7 @@ AI-Tool-Finder/
 | Service   | Container                | Purpose                                      |
 |-----------|--------------------------|----------------------------------------------|
 | `app`     | `ai-tool-finder-app`     | PHP-FPM running Laravel                      |
-| `nginx`   | `ai-tool-finder-nginx`   | Web server for Laravel                       |
+| `nginx`   | `ai-tool-finder-nginx`   | Single entry point: routes to Laravel and Next.js |
 | `db`      | `ai-tool-finder-db`      | MySQL 8.4                                    |
 | `queue`   | `ai-tool-finder-queue`   | Laravel queue worker (`queue:work`)          |
 | `node`    | `ai-tool-finder-node`    | Next.js dev server (`npm install` + `npm run dev`) |
@@ -80,10 +80,14 @@ The `queue` container restarts until step 3 is done; this is expected on the fir
 
 | What             | URL                                         |
 |------------------|---------------------------------------------|
-| Laravel API      | http://localhost:8000 (JSON only, no pages) |
-| Next.js frontend | http://localhost:3000                       |
-| Mailpit (emails) | http://localhost:8025                       |
-| MySQL            | `localhost:3307` (user `ai_finder_user`)    |
+| Application      | http://localhost:3000                       |
+| Mailpit (emails) | http://localhost:8025 (this machine only)   |
+| MySQL            | `localhost:3307` (user `ai_finder_user`, this machine only) |
+
+nginx is the only public entry point. It sends `/api/*`, `/sanctum/*` and `/up`
+to Laravel (JSON only, no pages) and everything else to the Next.js dev server.
+Laravel and Next.js do not publish their own ports, so the frontend and the API
+share one origin (no CORS, first-party session cookies). Port 3000 must be free.
 
 ### Useful Docker Commands
 
@@ -106,4 +110,5 @@ docker compose down               # stop containers (database data is kept)
 - ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/api/login`, `/api/logout`, `GET /api/user`, `GET /api/dashboard`)
 - ✅ Next.js frontend layout (logo, login button, clock, user ID)
 - ✅ Next.js login and role-based dashboard
-- 🚧 Single entry point via nginx (#19) — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
+- ✅ Single entry point via nginx; MySQL and Mailpit bound to this machine only
+- 🚧 Next features — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
