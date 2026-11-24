@@ -1,11 +1,12 @@
+import DashboardGreeting from "@/components/DashboardGreeting";
 import RequireAuth from "@/components/RequireAuth";
 
-// The greeting and role-based menu come with #7.
+// The role-based menu comes with #7.
 export default function DashboardPage() {
   return (
     <RequireAuth>
       <section className="flex flex-col gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">Табло</h1>
+        <DashboardGreeting />
       </section>
     </RequireAuth>
   );
