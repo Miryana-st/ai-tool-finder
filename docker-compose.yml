@@ -19,7 +19,7 @@ services:
     container_name: ai-tool-finder-nginx
     restart: unless-stopped
     ports:
-      - "80:80" # the only public entry point (see nginx/default.conf)
+      - "3000:80" # the only public entry point: http://localhost:3000 (see nginx/default.conf)
     volumes:
       - ./backend:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf

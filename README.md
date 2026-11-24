@@ -80,14 +80,14 @@ The `queue` container restarts until step 3 is done; this is expected on the fir
 
 | What             | URL                                         |
 |------------------|---------------------------------------------|
-| Application      | http://localhost                            |
+| Application      | http://localhost:3000                       |
 | Mailpit (emails) | http://localhost:8025 (this machine only)   |
 | MySQL            | `localhost:3307` (user `ai_finder_user`, this machine only) |
 
 nginx is the only public entry point. It sends `/api/*`, `/sanctum/*` and `/up`
 to Laravel (JSON only, no pages) and everything else to the Next.js dev server.
 Laravel and Next.js do not publish their own ports, so the frontend and the API
-share one origin (no CORS, first-party session cookies). Port 80 must be free.
+share one origin (no CORS, first-party session cookies). Port 3000 must be free.
 
 ### Useful Docker Commands
 
