@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AuthButton from "./AuthButton";
 import Clock from "./Clock";
 import Logo from "./Logo";
 import UserId from "./UserId";
@@ -12,12 +12,7 @@ export default function Header() {
         <div className="flex items-center gap-4">
           <Clock />
           <UserId />
-          <Link
-            href="/login"
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-          >
-            Вход
-          </Link>
+          <AuthButton />
         </div>
       </div>
     </header>

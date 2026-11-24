@@ -1,8 +1,15 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+
+// Logged-in users go to their dashboard, guests to the home page.
 export default function Logo() {
+  const { status } = useAuth();
+  const href = status === "authenticated" ? "/dashboard" : "/";
+
   return (
-    <Link href="/" className="flex items-center gap-2 font-semibold">
+    <Link href={href} className="flex items-center gap-2 font-semibold">
       <svg
         viewBox="0 0 32 32"
         className="h-8 w-8"

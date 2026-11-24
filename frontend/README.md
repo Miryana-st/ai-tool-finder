@@ -20,6 +20,23 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Authentication (Laravel Sanctum)
+
+The frontend logs in against the Laravel backend with Sanctum cookie-based SPA auth:
+
+1. `GET /sanctum/csrf-cookie` sets the `XSRF-TOKEN` cookie.
+2. `POST /login` (email + password) with the `X-XSRF-TOKEN` header.
+3. `GET /api/user` loads the current user into the auth context (`useAuth`).
+
+Logout calls `POST /logout`. `/dashboard` redirects guests to `/login`; data is still protected by the backend.
+
+Required configuration:
+
+- Frontend: `NEXT_PUBLIC_API_URL` (see `.env.example`).
+- Backend: `FRONTEND_URL=http://localhost:3000`, `SANCTUM_STATEFUL_DOMAINS=localhost:3000`, `SESSION_DOMAIN=localhost`.
+
+Open the app via `http://localhost:3000` (not `127.0.0.1`), otherwise the session/CSRF cookies are not shared and login fails with 419.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
