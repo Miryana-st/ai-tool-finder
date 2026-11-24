@@ -8,6 +8,18 @@ export type User = {
   role_label: string;
 };
 
+// A null href marks a placeholder that is not wired up yet.
+export type MenuItem = {
+  key: string;
+  label: string;
+  href: string | null;
+};
+
+export type Dashboard = {
+  user: User;
+  menu: MenuItem[];
+};
+
 export type ValidationErrors = Record<string, string[]>;
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -99,4 +111,10 @@ export async function getUser(signal?: AbortSignal): Promise<User | null> {
     }
     throw error;
   }
+}
+
+export async function getDashboard(signal?: AbortSignal): Promise<Dashboard> {
+  const response = await apiFetch("/api/dashboard", { signal });
+  const body: { data: Dashboard } = await response.json();
+  return body.data;
 }
