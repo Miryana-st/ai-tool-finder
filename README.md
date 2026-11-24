@@ -12,7 +12,8 @@ AI-Tool-Finder is a web application built with Laravel and Next.js, designed to 
 - MySQL 8.4
 
 ### Frontend
-- Next.js (planned, see #5)
+- Next.js 16 (App Router, TypeScript)
+- Tailwind CSS 4
 - Node.js 22
 
 ### Infrastructure
@@ -25,7 +26,7 @@ AI-Tool-Finder is a web application built with Laravel and Next.js, designed to 
 ```text
 AI-Tool-Finder/
 ├── backend/              # Laravel application
-├── frontend/             # Next.js application (created in #5)
+├── frontend/             # Next.js application
 ├── nginx/                # Nginx configuration
 ├── docker/
 │   └── php/              # PHP-FPM image (used by app and queue)
@@ -41,7 +42,7 @@ AI-Tool-Finder/
 | `nginx`   | `ai-tool-finder-nginx`   | Web server for Laravel                       |
 | `db`      | `ai-tool-finder-db`      | MySQL 8.4                                    |
 | `queue`   | `ai-tool-finder-queue`   | Laravel queue worker (`queue:work`)          |
-| `node`    | `ai-tool-finder-node`    | Next.js dev server (idle until `frontend/` has a `package.json`) |
+| `node`    | `ai-tool-finder-node`    | Next.js dev server (`npm install` + `npm run dev`) |
 | `mailpit` | `ai-tool-finder-mailpit` | Catches all outgoing emails                  |
 
 ## Getting Started
@@ -56,8 +57,9 @@ AI-Tool-Finder/
 git clone <repository-url>
 cd AI-Tool-Finder
 
-# 1. Create the backend environment file
+# 1. Create the environment files
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 
 # 2. Build and start the containers
 docker compose up -d --build
@@ -79,7 +81,7 @@ The `queue` container restarts until step 3 is done; this is expected on the fir
 | What             | URL                                         |
 |------------------|---------------------------------------------|
 | Laravel backend  | http://localhost:8000                       |
-| Next.js frontend | http://localhost:3000 (after #5)            |
+| Next.js frontend | http://localhost:3000                       |
 | Mailpit (emails) | http://localhost:8025                       |
 | MySQL            | `localhost:3307` (user `ai_finder_user`)    |
 
@@ -91,6 +93,8 @@ docker compose logs -f            # all logs
 docker compose logs -f queue      # queue worker logs
 docker compose restart queue      # reload the worker after changing job code
 docker compose exec app php artisan test   # run backend tests
+docker compose exec node npm run lint      # lint the frontend
+docker compose logs -f node       # Next.js dev server logs
 docker compose down               # stop containers (database data is kept)
 ```
 
@@ -100,4 +104,5 @@ docker compose down               # stop containers (database data is kept)
 - ✅ Laravel with Fortify login
 - ✅ User roles with seeded sample users
 - ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/login`, `/logout`, `GET /api/user`)
-- 🚧 Dashboard, Next.js frontend — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
+- ✅ Next.js frontend layout (logo, login button, clock, user ID)
+- 🚧 Next.js login and dashboard — see the [GitHub issues](https://github.com/Miryana-st/AI-Tool-Finder/issues)
