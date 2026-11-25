@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * An AI tool in the catalog.
@@ -30,6 +32,27 @@ class Tool extends Model
 {
     /** @use HasFactory<ToolFactory> */
     use HasFactory, HasSlugFromName, SoftDeletes;
+
+    /**
+     * Maximum number of screenshots per tool.
+     */
+    public const int MAX_IMAGES = 6;
+
+    /**
+     * Remove the screenshot files when the tool is force deleted. The database
+     * cascade removes the image records without model events, so the paths are
+     * read first and the files are deleted once the delete is committed.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (Tool $tool) {
+            $paths = $tool->images()->pluck('path')->all();
+
+            if ($paths !== []) {
+                DB::afterCommit(fn () => Storage::disk('public')->delete($paths));
+            }
+        });
+    }
 
     /**
      * Get the user who added the tool.

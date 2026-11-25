@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tool\CategoryController;
 use App\Http\Controllers\Tool\TagController;
 use App\Http\Controllers\Tool\ToolController;
+use App\Http\Controllers\Tool\ToolImageController;
 use App\Http\Controllers\User\CompanyRoleController;
 use App\Http\Controllers\User\UserSystemRoleController;
 use App\Http\Resources\User\UserResource;
@@ -32,6 +33,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tools/{tool:slug}', [ToolController::class, 'show'])->name('api.tools.show');
     Route::put('/tools/{tool}', [ToolController::class, 'update'])->name('api.tools.update');
     Route::delete('/tools/{tool}', [ToolController::class, 'destroy'])->name('api.tools.destroy');
+
+    Route::post('/tools/{tool}/images', [ToolImageController::class, 'store'])->name('api.tools.images.store');
+    Route::delete('/tools/{tool}/images/{image}', [ToolImageController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('api.tools.images.destroy');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');

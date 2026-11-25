@@ -27,7 +27,7 @@ class ToolController extends Controller
      *
      * @var list<string>
      */
-    private const array RELATIONS = ['user:id,name', 'categories', 'tags', 'companyRoles'];
+    private const array RELATIONS = ['user:id,name', 'categories', 'tags', 'companyRoles', 'images'];
 
     /**
      * List tools, newest first, filtered by name, company role, category and tag.
