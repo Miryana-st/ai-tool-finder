@@ -2,7 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\Role;
+use App\Enums\SystemRole;
+use App\Models\CompanyRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,17 +32,28 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => fake()->randomElement(Role::cases()),
+            'system_role' => SystemRole::User,
+            'company_role_id' => fn () => CompanyRole::query()->inRandomOrder()->value('id'),
         ];
     }
 
     /**
-     * Indicate that the user has the given role.
+     * Indicate that the user has the company role with the given slug.
      */
-    public function role(Role $role): static
+    public function companyRole(string $slug): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => $role,
+            'company_role_id' => CompanyRole::where('slug', $slug)->firstOrFail()->id,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is an admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'system_role' => SystemRole::Admin,
         ]);
     }
 

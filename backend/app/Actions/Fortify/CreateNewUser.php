@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Models\CompanyRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,9 @@ class CreateNewUser implements CreatesNewUsers
 
     /**
      * Validate and create a newly registered user.
+     *
+     * Users must pick their company role, but not one reserved for others to assign.
+     * New users always get the `user` system role; only an admin can make them admin.
      *
      * @param  array<string, string>  $input
      *
@@ -32,12 +36,18 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
+            'company_role' => [
+                'required',
+                'string',
+                Rule::exists(CompanyRole::class, 'slug')->whereNotIn('slug', CompanyRole::NOT_SELF_ASSIGNABLE),
+            ],
         ])->validate();
 
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
+            'company_role_id' => CompanyRole::where('slug', $input['company_role'])->value('id'),
         ]);
     }
 }

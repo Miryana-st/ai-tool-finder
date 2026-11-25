@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -12,17 +11,17 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Example users, one for each role.
+     * Example users, one for each company role. The owner is the default admin.
      *
-     * @var array<string, array{role: Role, name: string}>
+     * @var array<string, array{company_role: string, name: string, admin?: bool}>
      */
     private const array SAMPLE_USERS = [
-        'owner@ai-finder.test' => ['role' => Role::Owner, 'name' => 'Иван Иванов'],
-        'backend@ai-finder.test' => ['role' => Role::Backend, 'name' => 'Петър Петров'],
-        'frontend@ai-finder.test' => ['role' => Role::Frontend, 'name' => 'Мария Георгиева'],
-        'pm@ai-finder.test' => ['role' => Role::Pm, 'name' => 'Елена Димитрова'],
-        'qa@ai-finder.test' => ['role' => Role::Qa, 'name' => 'Георги Николов'],
-        'designer@ai-finder.test' => ['role' => Role::Designer, 'name' => 'Анна Стоянова'],
+        'owner@ai-finder.test' => ['company_role' => 'owner', 'name' => 'Иван Иванов', 'admin' => true],
+        'backend@ai-finder.test' => ['company_role' => 'backend', 'name' => 'Петър Петров'],
+        'frontend@ai-finder.test' => ['company_role' => 'frontend', 'name' => 'Мария Георгиева'],
+        'pm@ai-finder.test' => ['company_role' => 'pm', 'name' => 'Елена Димитрова'],
+        'qa@ai-finder.test' => ['company_role' => 'qa', 'name' => 'Георги Николов'],
+        'designer@ai-finder.test' => ['company_role' => 'designer', 'name' => 'Анна Стоянова'],
     ];
 
     /**
@@ -32,7 +31,8 @@ class DatabaseSeeder extends Seeder
     {
         foreach (self::SAMPLE_USERS as $email => $user) {
             User::factory()
-                ->role($user['role'])
+                ->companyRole($user['company_role'])
+                ->when($user['admin'] ?? false, fn ($factory) => $factory->admin())
                 ->create([
                     'name' => $user['name'],
                     'email' => $email,
