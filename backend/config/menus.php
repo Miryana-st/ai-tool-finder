@@ -31,7 +31,6 @@ return [
         'categories' => 'Категории',
         'tags' => 'Тагове',
         'tools' => 'AI инструменти',
-        'settings' => 'Настройки',
     ],
 
     'default' => [

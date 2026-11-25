@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Tool } from "@/lib/api";
 import { markdownToPlainText } from "./Markdown";
-import { chipClassName, mutedTextClassName } from "./styles";
+import { chipClassName, mutedTextClassName } from "@/styles/classNames";
 
 export default function ToolCard({ tool }: { tool: Tool }) {
   const thumbnail = tool.images[0];

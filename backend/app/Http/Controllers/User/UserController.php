@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Actions\User\DeleteUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\IndexUserRequest;
 use App\Http\Resources\User\UserResource;
 use App\Models\User\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -29,5 +33,21 @@ class UserController extends Controller
             ->withQueryString();
 
         return UserResource::collection($users);
+    }
+
+    /**
+     * Delete the given user (admins only, not themselves).
+     */
+    public function destroy(User $user, DeleteUser $deleteUser): JsonResponse|Response
+    {
+        Gate::authorize('delete', $user);
+
+        if (! $deleteUser->handle($user)) {
+            return response()->json([
+                'message' => 'The user has added tools and cannot be deleted.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        return response()->noContent();
     }
 }

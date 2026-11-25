@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import AdminOnly from "@/components/admin/AdminOnly";
 import * as api from "@/lib/api";
@@ -10,7 +9,7 @@ import {
   dangerButtonClassName,
   mutedTextClassName,
   primaryButtonClassName,
-} from "@/components/tools/styles";
+} from "@/styles/classNames";
 
 type Suggestion = Category | Tag;
 
@@ -114,15 +113,6 @@ function SuggestionList({ kind }: { kind: SuggestionKind }) {
         <p className={mutedTextClassName}>{text.intro}</p>
       </div>
 
-      <nav aria-label="Предложения" className="flex gap-4 text-sm">
-        <AdminTab href="/admin/categories" isActive={kind === "categories"}>
-          Категории
-        </AdminTab>
-        <AdminTab href="/admin/tags" isActive={kind === "tags"}>
-          Тагове
-        </AdminTab>
-      </nav>
-
       {message && (
         <p
           role={message.type === "error" ? "alert" : "status"}
@@ -188,17 +178,5 @@ function SuggestionList({ kind }: { kind: SuggestionKind }) {
         </ul>
       )}
     </section>
-  );
-}
-
-function AdminTab({ href, isActive, children }: { href: string; isActive: boolean; children: string }) {
-  return (
-    <Link
-      href={href}
-      aria-current={isActive ? "page" : undefined}
-      className={isActive ? "font-semibold text-indigo-600 underline" : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-400"}
-    >
-      {children}
-    </Link>
   );
 }

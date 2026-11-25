@@ -9,7 +9,7 @@ import {
   TOOL_IMAGE_TYPES,
   type ToolImage,
 } from "@/lib/api";
-import { fieldErrorClassName, mutedTextClassName } from "./styles";
+import { fieldErrorClassName, mutedTextClassName } from "@/styles/classNames";
 
 type Props = {
   // Set for an existing tool: files are uploaded and deleted right away.

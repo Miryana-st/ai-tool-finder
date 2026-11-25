@@ -12,7 +12,7 @@ import {
   inputClassName,
   mutedTextClassName,
   secondaryButtonClassName,
-} from "./styles";
+} from "@/styles/classNames";
 
 const MAX_TAG_LENGTH = 30;
 

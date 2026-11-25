@@ -11,7 +11,7 @@ import {
   mutedTextClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
-} from "./styles";
+} from "@/styles/classNames";
 
 const SEARCH_DELAY = 300;
 

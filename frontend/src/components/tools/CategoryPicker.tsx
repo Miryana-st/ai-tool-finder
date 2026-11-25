@@ -9,7 +9,7 @@ import {
   inputClassName,
   mutedTextClassName,
   secondaryButtonClassName,
-} from "./styles";
+} from "@/styles/classNames";
 
 type Props = {
   categories: Category[];

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { mutedTextClassName } from "@/components/tools/styles";
+import { mutedTextClassName } from "@/styles/classNames";
 
 // The backend allows admin pages to admins only; this check just shows a clear
 // message instead of a failed request. Use it inside RequireAuth.

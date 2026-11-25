@@ -12,7 +12,7 @@ import {
   mutedTextClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
-} from "@/components/tools/styles";
+} from "@/styles/classNames";
 
 // Kept in line with StoreCompanyRoleRequest (slug max:50).
 const SLUG_MAX_LENGTH = 50;
@@ -56,16 +56,16 @@ export default function CompanyRoleManager() {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Роли във фирмата</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Длъжност във фирмата</h1>
         <p className={mutedTextClassName}>
-          Slug-ът не може да се променя след създаване. Роля, която е зададена на потребители, не може да се изтрие.
+          Slug-ът не може да се променя след създаване. Длъжност, която е зададена на потребители, не може да се изтрие.
         </p>
       </div>
 
       <AddRoleForm
         onCreated={(role) => {
           updateRoles((roles) => [...roles, role]);
-          setMessage({ type: "success", text: `Ролята „${role.name}“ е добавена.` });
+          setMessage({ type: "success", text: `Длъжността „${role.name}“ е добавена.` });
         }}
       />
 
@@ -77,6 +77,8 @@ export default function CompanyRoleManager() {
           {message.text}
         </p>
       )}
+
+      <h2 className="text-lg font-semibold">Съществуващи роли</h2>
 
       {state.status === "loading" && <p className={mutedTextClassName}>Зареждане…</p>}
 
@@ -136,7 +138,7 @@ function AddRoleForm({ onCreated }: { onCreated: (role: CompanyRole) => void }) 
         setErrors(error.errors);
       } else {
         console.error("Could not create the company role.", error);
-        setFormError("Ролята не можа да се добави. Опитай отново.");
+        setFormError("Длъжността не можа да се добави. Опитай отново.");
       }
     } finally {
       setIsSaving(false);
@@ -153,7 +155,7 @@ function AddRoleForm({ onCreated }: { onCreated: (role: CompanyRole) => void }) 
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      <h2 className="text-lg font-semibold">Нова роля</h2>
+      <h2 className="text-lg font-semibold">Нова Длъжност</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <NameSlugFields
@@ -180,7 +182,7 @@ function AddRoleForm({ onCreated }: { onCreated: (role: CompanyRole) => void }) 
         disabled={isSaving || !canSendNameSlug(name, slug)}
         className={`${primaryButtonClassName} self-start`}
       >
-        {isSaving ? "Добавяне…" : "Добави роля"}
+        {isSaving ? "Добавяне…" : "Добави Длъжност"}
       </button>
     </form>
   );
@@ -223,13 +225,13 @@ function RoleItem({
       const renamed = await api.updateCompanyRole(role.id, { name: name.trim() });
       setIsEditing(false);
       onRenamed(renamed);
-      onMessage({ type: "success", text: `Ролята е преименувана на „${renamed.name}“.` });
+      onMessage({ type: "success", text: `Длъжността е преименувана на „${renamed.name}“.` });
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         setNameError(api.fieldError(error.errors, "name") ?? error.message);
       } else {
         console.error("Could not rename the company role.", error);
-        onMessage({ type: "error", text: "Ролята не можа да се преименува. Опитай отново." });
+        onMessage({ type: "error", text: "Длъжността не можа да се преименува. Опитай отново." });
       }
     } finally {
       setIsBusy(false);
@@ -237,7 +239,7 @@ function RoleItem({
   };
 
   const remove = async () => {
-    if (!window.confirm(`Да изтрия ли ролята „${role.name}“?`)) {
+    if (!window.confirm(`Да изтрия ли длъжността „${role.name}“?`)) {
       return;
     }
 
@@ -247,17 +249,17 @@ function RoleItem({
     try {
       await api.deleteCompanyRole(role.id);
       onDeleted(role.id);
-      onMessage({ type: "success", text: `Ролята „${role.name}“ е изтрита.` });
+      onMessage({ type: "success", text: `Длъжността „${role.name}“ е изтрита.` });
     } catch (error) {
       // 409: the role is assigned to users; the server says so.
       if (error instanceof ApiError && error.status === 409) {
         onMessage({ type: "error", text: error.message });
       } else if (error instanceof ApiError && error.status === 404) {
         onDeleted(role.id);
-        onMessage({ type: "error", text: `Ролята „${role.name}“ вече е изтрита.` });
+        onMessage({ type: "error", text: `Длъжността „${role.name}“ вече е изтрита.` });
       } else {
         console.error("Could not delete the company role.", error);
-        onMessage({ type: "error", text: "Ролята не можа да се изтрие. Опитай отново." });
+        onMessage({ type: "error", text: "Длъжността не можа да се изтрие. Опитай отново." });
       }
     } finally {
       setIsBusy(false);

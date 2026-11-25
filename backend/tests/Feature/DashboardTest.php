@@ -18,7 +18,6 @@ class DashboardTest extends TestCase
         ['key' => 'categories', 'label' => 'Категории', 'href' => '/admin/categories'],
         ['key' => 'tags', 'label' => 'Тагове', 'href' => '/admin/tags'],
         ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
-        ['key' => 'settings', 'label' => 'Настройки', 'href' => null],
     ];
 
     public function test_dashboard_api_returns_user_and_company_role_menu(): void
@@ -46,6 +45,11 @@ class DashboardTest extends TestCase
                         ['key' => 'tests', 'label' => 'Тестове', 'href' => null],
                         ['key' => 'bugs', 'label' => 'Бъгове', 'href' => null],
                         ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
+                    ],
+                    'stats' => [
+                        'tools_total' => 0,
+                        'tools_for_company_role' => 0,
+                        'popular_categories' => [],
                     ],
                 ],
             ]);

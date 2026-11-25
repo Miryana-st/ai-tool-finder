@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import ToolForm from "./ToolForm";
 import ToolStateMessage from "./ToolStateMessage";
 import { useTool } from "./useTool";
-import { mutedTextClassName } from "./styles";
+import { mutedTextClassName } from "@/styles/classNames";
 
 // Edit page body: loads the tool and shows the form if the user may edit it.
 // The backend checks the same rights again (ToolPolicy) when saving.
