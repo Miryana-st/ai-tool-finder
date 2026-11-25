@@ -13,8 +13,8 @@ class DashboardTest extends TestCase
     use RefreshDatabase;
 
     private const array ADMIN_MENU = [
-        ['key' => 'users', 'label' => 'Потребители', 'href' => null],
-        ['key' => 'roles', 'label' => 'Роли', 'href' => null],
+        ['key' => 'users', 'label' => 'Потребители', 'href' => '/admin/users'],
+        ['key' => 'roles', 'label' => 'Роли', 'href' => '/admin/company-roles'],
         ['key' => 'categories', 'label' => 'Категории', 'href' => '/admin/categories'],
         ['key' => 'tags', 'label' => 'Тагове', 'href' => '/admin/tags'],
         ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],

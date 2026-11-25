@@ -107,6 +107,14 @@ export type ToolFilters = {
   page?: number;
 };
 
+// Admin user list filters; `search` matches name or email, `company_role` is a slug.
+export type UserFilters = {
+  search?: string;
+  system_role?: User["system_role"] | "";
+  company_role?: string;
+  page?: number;
+};
+
 export type PaginationMeta = {
   current_page: number;
   last_page: number;
@@ -242,6 +250,53 @@ export async function getCompanyRoles(signal?: AbortSignal): Promise<CompanyRole
   return body.data;
 }
 
+// Admin only. The slug cannot change later: dashboard menus are keyed by it.
+export async function createCompanyRole(input: { slug: string; name: string }): Promise<CompanyRole> {
+  const response = await apiFetch("/api/company-roles", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const body: { data: CompanyRole } = await response.json();
+  return body.data;
+}
+
+// Admin only. Only the name can change.
+export async function updateCompanyRole(id: number, input: { name: string }): Promise<CompanyRole> {
+  const response = await apiFetch(`/api/company-roles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  const body: { data: CompanyRole } = await response.json();
+  return body.data;
+}
+
+// Admin only. A role that users have cannot be deleted (409).
+export async function deleteCompanyRole(id: number): Promise<void> {
+  await apiFetch(`/api/company-roles/${id}`, { method: "DELETE" });
+}
+
+// Admin only. 20 users per page, ordered by name.
+export async function getUsers(
+  filters: UserFilters,
+  signal?: AbortSignal,
+): Promise<Paginated<User>> {
+  const response = await apiFetch(`/api/users${toQuery(filters)}`, { signal });
+  return response.json();
+}
+
+// Admin only. Taking the role from the last admin is refused (422 on `system_role`).
+export async function updateUserSystemRole(
+  id: number,
+  systemRole: User["system_role"],
+): Promise<User> {
+  const response = await apiFetch(`/api/users/${id}/system-role`, {
+    method: "PATCH",
+    body: JSON.stringify({ system_role: systemRole }),
+  });
+  const body: { data: User } = await response.json();
+  return body.data;
+}
+
 export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
   const response = await apiFetch("/api/categories", { signal });
   const body: { data: Category[] } = await response.json();
@@ -304,6 +359,12 @@ export async function getTools(
   filters: ToolFilters,
   signal?: AbortSignal,
 ): Promise<Paginated<Tool>> {
+  const response = await apiFetch(`/api/tools${toQuery(filters)}`, { signal });
+  return response.json();
+}
+
+// "?key=value&…" for the filled-in filters, or "" when there are none.
+function toQuery(filters: Record<string, string | number | undefined>): string {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(filters)) {
@@ -312,9 +373,7 @@ export async function getTools(
     }
   }
 
-  const query = params.size > 0 ? `?${params}` : "";
-  const response = await apiFetch(`/api/tools${query}`, { signal });
-  return response.json();
+  return params.size > 0 ? `?${params}` : "";
 }
 
 // Tools are shown by slug but changed by id (see routes/api.php).

@@ -18,6 +18,8 @@ return [
     */
 
     'hrefs' => [
+        'users' => '/admin/users',
+        'roles' => '/admin/company-roles',
         'tools' => '/tools',
         'categories' => '/admin/categories',
         'tags' => '/admin/tags',

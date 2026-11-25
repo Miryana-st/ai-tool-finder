@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import AdminOnly from "@/components/admin/AdminOnly";
 import * as api from "@/lib/api";
 import { ApiError, type Category, type SuggestionKind, type Tag } from "@/lib/api";
 import {
@@ -34,25 +34,13 @@ const TEXT: Record<SuggestionKind, { title: string; intro: string; approved: (na
 
 const dateFormat = new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" });
 
-// Category or tag suggestions waiting for an admin. The backend allows this to
-// admins only; the check here just shows a clear message instead of an error.
+// Category or tag suggestions waiting for an admin.
 export default function PendingSuggestions({ kind }: { kind: SuggestionKind }) {
-  const { user } = useAuth();
-
-  if (user?.system_role !== "admin") {
-    return (
-      <div className="flex flex-col gap-3">
-        <p role="alert" className={mutedTextClassName}>
-          Тази страница е само за администратори.
-        </p>
-        <Link href="/dashboard" className="text-sm text-indigo-600 hover:underline">
-          ← Към таблото
-        </Link>
-      </div>
-    );
-  }
-
-  return <SuggestionList key={kind} kind={kind} />;
+  return (
+    <AdminOnly>
+      <SuggestionList key={kind} kind={kind} />
+    </AdminOnly>
+  );
 }
 
 function SuggestionList({ kind }: { kind: SuggestionKind }) {
