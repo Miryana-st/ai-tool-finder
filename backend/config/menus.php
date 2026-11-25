@@ -12,11 +12,20 @@ return [
     | role's slug. A company role without its own menu gets the default
     | menu, so new company roles can be added as data without a deploy.
     |
+    | `hrefs` maps an item key to its frontend page. Items without an href
+    | are placeholders that are not wired up yet.
+    |
     */
+
+    'hrefs' => [
+        'tools' => '/tools',
+        'categories' => '/admin/categories',
+    ],
 
     'admin' => [
         'users' => 'Потребители',
         'roles' => 'Роли',
+        'categories' => 'Категории',
         'tools' => 'AI инструменти',
         'settings' => 'Настройки',
     ],

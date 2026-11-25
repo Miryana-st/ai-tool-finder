@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tool;
 
+use App\Actions\Tool\SuggestCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreCategoryRequest;
 use App\Http\Resources\Tool\CategoryResource;
@@ -9,24 +10,85 @@ use App\Models\Tool\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class CategoryController extends Controller
 {
     /**
-     * List all categories.
+     * List the approved categories (the ones users can pick).
      */
     public function index(): AnonymousResourceCollection
     {
-        return CategoryResource::collection(Category::orderBy('name')->get());
+        return CategoryResource::collection(Category::approved()->orderBy('name')->get());
     }
 
     /**
-     * Add a category (the "+ New category" button in the tool form).
+     * Suggest a category (the "Suggest a category" button in the tool form).
+     * An admin's category is approved right away.
      */
-    public function store(StoreCategoryRequest $request): JsonResponse
+    public function store(StoreCategoryRequest $request, SuggestCategory $suggestCategory): JsonResponse
     {
-        $category = Category::create($request->validated());
+        $category = $suggestCategory->handle($request->user(), $request->validated());
 
         return (new CategoryResource($category))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    /**
+     * List the suggestions waiting for an admin, oldest first.
+     */
+    public function pending(): AnonymousResourceCollection
+    {
+        Gate::authorize('viewPending', Category::class);
+
+        $categories = Category::pending()
+            ->with('suggestedBy:id,name')
+            ->oldest()
+            ->oldest('id')
+            ->get();
+
+        return CategoryResource::collection($categories);
+    }
+
+    /**
+     * Approve a suggestion, so users can pick it.
+     */
+    public function approve(Category $category): CategoryResource|JsonResponse
+    {
+        Gate::authorize('approve', $category);
+
+        if ($category->isApproved()) {
+            return $this->alreadyApproved();
+        }
+
+        $category->approved_at = now();
+        $category->save();
+
+        return new CategoryResource($category);
+    }
+
+    /**
+     * Reject a suggestion: it is deleted, so the name can be suggested again.
+     */
+    public function reject(Category $category): JsonResponse|Response
+    {
+        Gate::authorize('reject', $category);
+
+        if ($category->isApproved()) {
+            return $this->alreadyApproved();
+        }
+
+        $category->delete();
+
+        return response()->noContent();
+    }
+
+    /**
+     * Approved categories are not suggestions any more and cannot be decided on again.
+     */
+    private function alreadyApproved(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'The category is already approved.',
+        ], Response::HTTP_CONFLICT);
     }
 }

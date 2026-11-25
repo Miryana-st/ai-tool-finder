@@ -17,6 +17,7 @@ class CategoryTagApiTest extends TestCase
 
     public function test_categories_are_listed_by_name(): void
     {
+        Category::query()->delete();
         Category::factory()->create(['name' => 'Writing']);
         Category::factory()->create(['name' => 'Code']);
 
@@ -25,6 +26,29 @@ class CategoryTagApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.*.name', ['Code', 'Writing'])
             ->assertJsonStructure(['data' => [['id', 'name', 'slug']]]);
+    }
+
+    public function test_base_categories_are_ready_to_pick_with_their_slugs(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->getJson('/api/categories')
+            ->assertOk()
+            ->assertJsonCount(7, 'data')
+            ->assertJsonFragment(['slug' => 'coding', 'name' => 'Код и IDE', 'description' => 'Cursor, Copilot, плъгини за ревю, генератори на код'])
+            ->assertJsonFragment(['slug' => 'design', 'name' => 'Дизайн и изображение', 'description' => 'UI генератори, Figma плъгини, изображения, икони'])
+            ->assertJsonFragment(['slug' => 'data', 'name' => 'Данни и анализ', 'description' => 'SQL асистенти, notebooks, таблици, BI'])
+            ->assertJsonFragment(['slug' => 'automation', 'name' => 'Автоматизация и агенти', 'description' => 'Агенти, workflow, n8n, свързване на вътрешни системи'])
+            ->assertJsonFragment(['slug' => 'testing', 'name' => 'Тестване и качество', 'description' => 'Генериране на тестове, преглед на бъгове, тестови данни'])
+            ->assertJsonFragment(['slug' => 'content', 'name' => 'Текст и съдържание', 'description' => 'Писане, превод, редактура, вътрешни комуникации'])
+            ->assertJsonFragment(['slug' => 'other', 'name' => 'Друго', 'is_approved' => true]);
+    }
+
+    public function test_a_base_category_name_cannot_be_added_again(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Код и IDE'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('name');
     }
 
     public function test_any_user_can_add_a_category(): void

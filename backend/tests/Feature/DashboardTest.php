@@ -15,7 +15,8 @@ class DashboardTest extends TestCase
     private const array ADMIN_MENU = [
         ['key' => 'users', 'label' => 'Потребители', 'href' => null],
         ['key' => 'roles', 'label' => 'Роли', 'href' => null],
-        ['key' => 'tools', 'label' => 'AI инструменти', 'href' => null],
+        ['key' => 'categories', 'label' => 'Категории', 'href' => '/admin/categories'],
+        ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
         ['key' => 'settings', 'label' => 'Настройки', 'href' => null],
     ];
 
@@ -43,7 +44,7 @@ class DashboardTest extends TestCase
                     'menu' => [
                         ['key' => 'tests', 'label' => 'Тестове', 'href' => null],
                         ['key' => 'bugs', 'label' => 'Бъгове', 'href' => null],
-                        ['key' => 'tools', 'label' => 'AI инструменти', 'href' => null],
+                        ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
                     ],
                 ],
             ]);
@@ -84,7 +85,7 @@ class DashboardTest extends TestCase
             ->getJson('/api/dashboard')
             ->assertOk()
             ->assertJsonPath('data.menu', [
-                ['key' => 'tools', 'label' => 'AI инструменти', 'href' => null],
+                ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
                 ['key' => 'reports', 'label' => 'Отчети', 'href' => null],
             ]);
     }
@@ -100,7 +101,7 @@ class DashboardTest extends TestCase
             ->assertJsonPath('data.user.company_role', 'data-scientist')
             ->assertJsonPath('data.user.company_role_label', 'Data Scientist')
             ->assertJsonPath('data.menu', [
-                ['key' => 'tools', 'label' => 'AI инструменти', 'href' => null],
+                ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
             ]);
     }
 
@@ -120,6 +121,17 @@ class DashboardTest extends TestCase
 
         $signatures = collect($menus)->map(fn (array $items) => implode(',', array_keys($items)));
         $this->assertSame($signatures->count(), $signatures->unique()->count(), 'Two company roles share the same menu.');
+    }
+
+    public function test_only_wired_up_menu_items_have_an_href(): void
+    {
+        $user = User::factory()->companyRole('qa')->create();
+
+        $hrefs = collect(app(DashboardMenu::class)->for($user))->pluck('href', 'key');
+
+        $this->assertSame('/tools', $hrefs['tools']);
+        $this->assertNull($hrefs['tests']);
+        $this->assertNull($hrefs['bugs']);
     }
 
     public function test_dashboard_api_does_not_expose_sensitive_attributes(): void
