@@ -31,7 +31,7 @@ class StoreToolRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', $this->uniqueNameRule()],
             'url' => ['required', 'string', 'max:255', 'url:http,https'],
-            'documentation_url' => ['nullable', 'string', 'max:255', 'url:http,https'],
+            'documentation_url' => ['required', 'string', 'max:255', 'url:http,https'],
             'description' => ['required', 'string'],
             'how_to_use' => ['required', 'string'],
             'examples' => ['nullable', 'string'],

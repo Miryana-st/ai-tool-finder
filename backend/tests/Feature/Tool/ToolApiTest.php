@@ -116,14 +116,14 @@ class ToolApiTest extends TestCase
         $tool->companyRoles()->attach(CompanyRole::where('slug', 'qa')->value('id'));
 
         $payload = $this->payload(['name' => 'New Name', 'tags' => ['Fresh']]);
-        unset($payload['documentation_url'], $payload['examples']);
+        unset($payload['examples']);
 
         $this->actingAs($user)
             ->putJson("/api/tools/{$tool->id}", $payload)
             ->assertOk()
             ->assertJsonPath('data.name', 'New Name')
             ->assertJsonPath('data.slug', 'old-name')
-            ->assertJsonPath('data.documentation_url', null)
+            ->assertJsonPath('data.documentation_url', 'https://docs.claude.com')
             ->assertJsonPath('data.examples', null);
 
         $this->assertDatabaseMissing('category_tool', ['tool_id' => $tool->id, 'category_id' => $oldCategory->id]);

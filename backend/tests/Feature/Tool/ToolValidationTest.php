@@ -28,6 +28,7 @@ class ToolValidationTest extends TestCase
         return array_merge([
             'name' => 'Claude',
             'url' => 'https://claude.ai',
+            'documentation_url' => 'https://docs.claude.com',
             'description' => 'An AI assistant.',
             'how_to_use' => 'Ask it a question.',
             'company_roles' => [CompanyRole::where('slug', 'backend')->value('id')],
@@ -40,8 +41,16 @@ class ToolValidationTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->postJson('/api/tools', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'url', 'description', 'how_to_use', 'company_roles', 'categories'])
-            ->assertJsonMissingValidationErrors(['documentation_url', 'examples', 'tags']);
+            ->assertJsonValidationErrors(['name', 'url', 'documentation_url', 'description', 'how_to_use', 'company_roles', 'categories'])
+            ->assertJsonMissingValidationErrors(['examples', 'tags']);
+    }
+
+    public function test_documentation_url_cannot_be_empty(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/tools', $this->payload(['documentation_url' => '']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('documentation_url');
     }
 
     public function test_optional_fields_can_be_omitted(): void
@@ -49,7 +58,6 @@ class ToolValidationTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->postJson('/api/tools', $this->payload())
             ->assertCreated()
-            ->assertJsonPath('data.documentation_url', null)
             ->assertJsonPath('data.examples', null)
             ->assertJsonCount(0, 'data.tags');
     }

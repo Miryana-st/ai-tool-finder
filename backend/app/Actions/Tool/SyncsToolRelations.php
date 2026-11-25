@@ -23,7 +23,7 @@ trait SyncsToolRelations
         return [
             'name' => $data['name'],
             'url' => $data['url'],
-            'documentation_url' => $data['documentation_url'] ?? null,
+            'documentation_url' => $data['documentation_url'],
             'description' => $data['description'],
             'how_to_use' => $data['how_to_use'],
             'examples' => $data['examples'] ?? null,

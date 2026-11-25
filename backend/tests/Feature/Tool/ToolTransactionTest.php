@@ -34,6 +34,7 @@ class ToolTransactionTest extends TestCase
         return [
             'name' => 'Claude',
             'url' => 'https://claude.ai',
+            'documentation_url' => 'https://docs.claude.com',
             'description' => 'An AI assistant.',
             'how_to_use' => 'Ask it a question.',
             'company_roles' => [CompanyRole::where('slug', 'backend')->value('id')],
