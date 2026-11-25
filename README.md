@@ -72,7 +72,14 @@ docker compose exec app php artisan key:generate
 
 # 5. Create the database tables and sample data
 docker compose exec app php artisan migrate --seed
+
+# 6. Make uploaded files (tool screenshots) public at /storage/*
+docker compose exec app php artisan storage:link
 ```
+
+If you already have the project running, rebuild the PHP image once
+(`docker compose up -d --build`) to get the upload limits from
+`docker/php/uploads.ini`, then run step 6.
 
 The `queue` container restarts until step 3 is done; this is expected on the first run.
 
@@ -85,7 +92,8 @@ The `queue` container restarts until step 3 is done; this is expected on the fir
 | MySQL            | `localhost:3307` (user `ai_finder_user`, this machine only) |
 
 nginx is the only public entry point. It sends `/api/*`, `/sanctum/*` and `/up`
-to Laravel (JSON only, no pages) and everything else to the Next.js dev server.
+to Laravel (JSON only, no pages), serves uploaded files from `/storage/*`, and
+sends everything else to the Next.js dev server.
 Laravel and Next.js do not publish their own ports, so the frontend and the API
 share one origin (no CORS, first-party session cookies). Port 3000 must be free.
 
