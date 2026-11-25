@@ -3,6 +3,10 @@
 export const inputClassName =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal dark:border-zinc-700 dark:bg-zinc-900";
 
+// Taller, rounder fields of the tool form (add and edit tool pages).
+export const formFieldClassName =
+  "w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-normal shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/20 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30";
+
 export const primaryButtonClassName =
   "inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60";
 

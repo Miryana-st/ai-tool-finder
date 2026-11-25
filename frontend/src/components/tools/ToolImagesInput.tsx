@@ -1,5 +1,6 @@
 "use client";
 
+import { CloudUpload, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import * as api from "@/lib/api";
 import {
@@ -91,7 +92,7 @@ export default function ToolImagesInput({ toolId, images, onImagesChange, files,
     }
   };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setIsDragging(false);
 
@@ -100,46 +101,51 @@ export default function ToolImagesInput({ toolId, images, onImagesChange, files,
     }
   };
 
+  const openPicker = () => fileInput.current?.click();
+  const canAdd = count < MAX_TOOL_IMAGES;
+
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-sm font-medium">
-        Скрийншоти ({count}/{MAX_TOOL_IMAGES})
+    <fieldset className="flex flex-col gap-3">
+      <legend className="sr-only">
+        Снимки ({count}/{MAX_TOOL_IMAGES})
       </legend>
 
-      {count < MAX_TOOL_IMAGES && (
-        <div
+      <input
+        ref={fileInput}
+        type="file"
+        accept={TOOL_IMAGE_TYPES.join(",")}
+        multiple
+        hidden
+        onChange={(event) => {
+          void addFiles(Array.from(event.target.files ?? []));
+          event.target.value = "";
+        }}
+      />
+
+      {canAdd && (
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={isBusy}
           onDragOver={(event) => {
             event.preventDefault();
             setIsDragging(true);
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`flex flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm ${
-            isDragging ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950" : "border-zinc-300 dark:border-zinc-700"
+          className={`flex min-h-52 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors disabled:opacity-60 ${
+            isDragging
+              ? "border-violet-500 bg-violet-50 dark:bg-violet-950/40"
+              : "border-violet-200 bg-violet-50/40 hover:border-violet-400 dark:border-violet-900 dark:bg-transparent"
           }`}
         >
-          <p className={mutedTextClassName}>Пусни изображения тук или</p>
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={isBusy}
-            className="font-medium text-indigo-600 hover:underline disabled:opacity-60"
-          >
-            избери файлове
-          </button>
-          <p className={`text-xs ${mutedTextClassName}`}>PNG, JPG или WEBP, до 4 MB</p>
-          <input
-            ref={fileInput}
-            type="file"
-            accept={TOOL_IMAGE_TYPES.join(",")}
-            multiple
-            hidden
-            onChange={(event) => {
-              void addFiles(Array.from(event.target.files ?? []));
-              event.target.value = "";
-            }}
-          />
-        </div>
+          <CloudUpload className="size-14 text-violet-600" strokeWidth={1.75} aria-hidden="true" />
+          <span className="text-base font-semibold">Качи картинка</span>
+          <span className={`text-sm ${mutedTextClassName}`}>Пусни файл тук или кликни за качване</span>
+          <span className={`text-xs ${mutedTextClassName}`}>
+            PNG, JPG или WEBP, до 4 MB · {count}/{MAX_TOOL_IMAGES}
+          </span>
+        </button>
       )}
 
       {isBusy && <p className={`text-sm ${mutedTextClassName}`}>Обработване…</p>}
@@ -150,11 +156,11 @@ export default function ToolImagesInput({ toolId, images, onImagesChange, files,
       )}
 
       {count > 0 && (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ul className="grid grid-cols-3 gap-2">
           {images.map((image) => (
             <li key={`image-${image.id}`} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={image.original_name} className="aspect-video w-full rounded-md object-cover" />
+              <img src={image.url} alt={image.original_name} className={thumbnailClassName} />
               <RemoveButton label={image.original_name} disabled={isBusy} onClick={() => void removeImage(image)} />
             </li>
           ))}
@@ -170,9 +176,23 @@ export default function ToolImagesInput({ toolId, images, onImagesChange, files,
           ))}
         </ul>
       )}
+
+      {count > 0 && canAdd && (
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={isBusy}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-background text-sm font-semibold text-violet-600 shadow-xs hover:bg-violet-50 disabled:opacity-60 dark:hover:bg-violet-950/40"
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          Добави още
+        </button>
+      )}
     </fieldset>
   );
 }
+
+const thumbnailClassName = "aspect-square w-full rounded-lg border object-cover";
 
 function RemoveButton({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) {
   return (
@@ -181,9 +201,9 @@ function RemoveButton({ label, disabled, onClick }: { label: string; disabled: b
       onClick={onClick}
       disabled={disabled}
       aria-label={`Изтрий ${label}`}
-      className="absolute right-1 top-1 rounded-full bg-black/70 px-2 text-sm text-white hover:bg-red-600 disabled:opacity-60"
+      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-600 disabled:opacity-60"
     >
-      ×
+      <X className="size-3" aria-hidden="true" />
     </button>
   );
 }
@@ -203,5 +223,5 @@ function FilePreview({ file }: { file: File }) {
   }, [file]);
 
   // eslint-disable-next-line @next/next/no-img-element
-  return <img ref={image} alt={file.name} className="aspect-video w-full rounded-md object-cover" />;
+  return <img ref={image} alt={file.name} className={thumbnailClassName} />;
 }

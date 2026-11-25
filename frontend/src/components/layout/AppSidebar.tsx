@@ -41,12 +41,12 @@ type NavItem = { label: string; href: string | null; icon: LucideIcon };
 // A null href is a page that does not exist yet.
 const MAIN_NAV: NavItem[] = [
   { label: "Табло", href: "/dashboard", icon: House },
-  { label: "Намери Tool", href: "/tools", icon: LayoutGrid },
-  { label: "Добави Tool", href: "/tools/new", icon: SquarePlus },
+  { label: "Намери инструмент", href: "/tools", icon: LayoutGrid },
+  { label: "Добави инструмент", href: "/tools/new", icon: SquarePlus },
   { label: "Профил", href: null, icon: UserRound },
 ];
 
-// "Намери Tool" is in the main menu, so it is left out of the role menu from the backend.
+// "Намери инструмент" is in the main menu, so it is left out of the role menu from the backend.
 const MAIN_NAV_MENU_KEYS = ["tools"];
 
 const menuButtonClassName =

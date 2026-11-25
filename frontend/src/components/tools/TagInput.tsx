@@ -9,7 +9,7 @@ import NameSlugFields, { canSendNameSlug } from "./NameSlugFields";
 import {
   chipClassName,
   fieldErrorClassName,
-  inputClassName,
+  formFieldClassName,
   mutedTextClassName,
   secondaryButtonClassName,
 } from "@/styles/classNames";
@@ -83,7 +83,7 @@ export default function TagInput({ tags, onChange, error }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="text-sm font-medium">
+      <label htmlFor={inputId} className="text-sm font-semibold">
         Тагове
       </label>
 
@@ -113,10 +113,10 @@ export default function TagInput({ tags, onChange, error }: Props) {
           onChange={(event) => setText(event.target.value)}
           onKeyDown={handleKeyDown}
           maxLength={MAX_TAG_LENGTH}
-          placeholder="Започни да пишеш, напр. Python"
+          placeholder="напр. ai, писане, продуктивност"
           autoComplete="off"
           aria-invalid={Boolean(error)}
-          className={inputClassName}
+          className={`${formFieldClassName} h-11`}
         />
 
         {matches.length > 0 && (
@@ -135,6 +135,7 @@ export default function TagInput({ tags, onChange, error }: Props) {
           </ul>
         )}
       </div>
+      <p className={`-mt-1 text-xs ${mutedTextClassName}`}>Натисни Enter за добавяне</p>
 
       {isSettled && matches.length === 0 && suggestions.tags.length === 0 && (
         <p className={`text-xs ${mutedTextClassName}`}>
