@@ -6,6 +6,7 @@ use App\Http\Controllers\Tool\TagController;
 use App\Http\Controllers\Tool\ToolController;
 use App\Http\Controllers\Tool\ToolImageController;
 use App\Http\Controllers\User\CompanyRoleController;
+use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\User\UserSystemRoleController;
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
@@ -24,6 +25,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('company-roles', CompanyRoleController::class)
         ->only(['store', 'update', 'destroy'])
         ->names('api.company-roles');
+
+    Route::get('/users', [UserController::class, 'index'])
+        ->name('api.users.index');
 
     Route::patch('/users/{user}/system-role', UserSystemRoleController::class)
         ->name('api.users.system-role.update');

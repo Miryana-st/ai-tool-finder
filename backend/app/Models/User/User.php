@@ -8,6 +8,8 @@ use App\Models\Tool\Tool;
 use Database\Factories\User\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -66,6 +68,24 @@ class User extends Authenticatable
     public function tools(): HasMany
     {
         return $this->hasMany(Tool::class);
+    }
+
+    /**
+     * Filter users by name or email, system role and company role (slug).
+     *
+     * @param  array{search?: ?string, system_role?: ?string, company_role?: ?string}  $filters
+     */
+    #[Scope]
+    protected function filter(Builder $query, array $filters): void
+    {
+        $query
+            ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(
+                fn (Builder $query) => $query
+                    ->whereLike('name', '%'.$search.'%')
+                    ->orWhereLike('email', '%'.$search.'%')
+            ))
+            ->when($filters['system_role'] ?? null, fn (Builder $query, string $role) => $query->where('system_role', $role))
+            ->when($filters['company_role'] ?? null, fn (Builder $query, string $slug) => $query->whereRelation('companyRole', 'slug', $slug));
     }
 
     /**
