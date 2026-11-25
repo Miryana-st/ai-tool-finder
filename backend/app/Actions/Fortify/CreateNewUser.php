@@ -2,8 +2,8 @@
 
 namespace App\Actions\Fortify;
 
-use App\Models\CompanyRole;
-use App\Models\User;
+use App\Models\User\CompanyRole;
+use App\Models\User\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;

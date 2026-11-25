@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\CompanyRoleController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserSystemRoleController;
-use App\Http\Resources\UserResource;
+use App\Http\Controllers\User\CompanyRoleController;
+use App\Http\Controllers\User\UserSystemRoleController;
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 

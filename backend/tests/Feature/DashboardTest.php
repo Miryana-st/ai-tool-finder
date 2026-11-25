@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\CompanyRole;
-use App\Models\User;
+use App\Models\User\CompanyRole;
+use App\Models\User\User;
 use App\Services\DashboardMenu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

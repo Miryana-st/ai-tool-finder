@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\User\User;
+use Database\Seeders\Tool\ToolSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -38,5 +39,7 @@ class DatabaseSeeder extends Seeder
                     'email' => $email,
                 ]);
         }
+
+        $this->call(ToolSeeder::class);
     }
 }
