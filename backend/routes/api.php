@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Tool\CategoryController;
+use App\Http\Controllers\Tool\TagController;
+use App\Http\Controllers\Tool\ToolController;
 use App\Http\Controllers\User\CompanyRoleController;
 use App\Http\Controllers\User\UserSystemRoleController;
 use App\Http\Resources\User\UserResource;
@@ -23,4 +26,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::patch('/users/{user}/system-role', UserSystemRoleController::class)
         ->name('api.users.system-role.update');
+
+    Route::get('/tools', [ToolController::class, 'index'])->name('api.tools.index');
+    Route::post('/tools', [ToolController::class, 'store'])->name('api.tools.store');
+    Route::get('/tools/{tool:slug}', [ToolController::class, 'show'])->name('api.tools.show');
+    Route::put('/tools/{tool}', [ToolController::class, 'update'])->name('api.tools.update');
+    Route::delete('/tools/{tool}', [ToolController::class, 'destroy'])->name('api.tools.destroy');
+
+    Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');
+
+    Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 });
