@@ -12,21 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Seeds a few real AI tools with their categories, tags and company roles.
+ * Seeds a few real AI tools with their tags, linked to the base categories
+ * and company roles that the migrations create.
  * Slugs are set explicitly, because DatabaseSeeder disables model events.
  */
 class ToolSeeder extends Seeder
 {
-    /**
-     * @var array<string, string>
-     */
-    private const array CATEGORIES = [
-        'assistants' => 'Асистенти',
-        'coding' => 'Програмиране',
-        'design' => 'Дизайн',
-        'research' => 'Проучване',
-    ];
-
     /**
      * @var array<string, string>
      */
@@ -50,7 +41,7 @@ class ToolSeeder extends Seeder
             'description' => 'Разговорен AI асистент за писане, анализ и идеи.',
             'how_to_use' => 'Описвате задачата в чата и уточнявате резултата с допълнителни въпроси.',
             'examples' => 'Чернова на имейл до клиент; обобщение на дълга спецификация; идеи за тестови сценарии.',
-            'categories' => ['assistants'],
+            'categories' => ['content'],
             'tags' => ['chat', 'api'],
             'company_roles' => ['owner', 'pm', 'qa', 'backend', 'frontend'],
         ],
@@ -61,7 +52,7 @@ class ToolSeeder extends Seeder
             'description' => 'AI асистент за писане, анализ на документи и програмиране.',
             'how_to_use' => 'Качвате документи или код и задавате въпроси; за програмиране се ползва и Claude Code в терминала.',
             'examples' => 'Преглед на pull request; обяснение на непознат код; анализ на договор или документация.',
-            'categories' => ['assistants', 'coding'],
+            'categories' => ['coding', 'content'],
             'tags' => ['chat', 'api'],
             'company_roles' => ['owner', 'pm', 'backend', 'frontend', 'qa'],
         ],
@@ -105,7 +96,7 @@ class ToolSeeder extends Seeder
             'description' => 'AI търсачка, която отговаря с цитирани източници.',
             'how_to_use' => 'Задавате въпрос и проверявате отговора чрез посочените източници.',
             'examples' => 'Сравнение на конкурентни продукти; проучване на нова библиотека преди избор.',
-            'categories' => ['research'],
+            'categories' => ['content'],
             'tags' => ['search', 'chat'],
             'company_roles' => ['owner', 'pm', 'designer', 'qa'],
         ],
@@ -117,7 +108,8 @@ class ToolSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            $categoryIds = $this->createNamed(Category::class, self::CATEGORIES);
+            // The base categories come from a migration (add_base_categories).
+            $categoryIds = Category::query()->pluck('id', 'slug');
             $tagIds = $this->createNamed(Tag::class, self::TAGS);
             $companyRoleIds = CompanyRole::query()->pluck('id', 'slug');
             $creator = User::query()->where('system_role', 'admin')->firstOrFail();
@@ -143,7 +135,7 @@ class ToolSeeder extends Seeder
     /**
      * Create the given slug => name records and return their ids keyed by slug.
      *
-     * @param  class-string<Category|Tag>  $model
+     * @param  class-string<Tag>  $model
      * @param  array<string, string>  $records
      * @return Collection<string, int>
      */

@@ -17,6 +17,7 @@ class CategoryTagApiTest extends TestCase
 
     public function test_categories_are_listed_by_name(): void
     {
+        Category::query()->delete();
         Category::factory()->create(['name' => 'Writing']);
         Category::factory()->create(['name' => 'Code']);
 
@@ -25,6 +26,38 @@ class CategoryTagApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.*.name', ['Code', 'Writing'])
             ->assertJsonStructure(['data' => [['id', 'name', 'slug']]]);
+    }
+
+    public function test_base_categories_are_ready_to_pick_with_their_slugs(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->getJson('/api/categories')
+            ->assertOk()
+            ->assertJsonCount(6, 'data')
+            ->assertJsonFragment(['slug' => 'coding', 'name' => 'Код и IDE'])
+            ->assertJsonFragment(['slug' => 'design', 'name' => 'Дизайн и изображение'])
+            ->assertJsonFragment(['slug' => 'data', 'name' => 'Данни и анализ'])
+            ->assertJsonFragment(['slug' => 'automation', 'name' => 'Автоматизация и агенти'])
+            ->assertJsonFragment(['slug' => 'testing', 'name' => 'Тестване и качество'])
+            ->assertJsonFragment(['slug' => 'content', 'name' => 'Текст и съдържание']);
+    }
+
+    public function test_a_user_category_is_added_next_to_the_base_ones(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Глас и видео'])
+            ->assertCreated()
+            ->assertJsonPath('data.slug', 'glas-i-video');
+
+        $this->getJson('/api/categories')->assertJsonCount(7, 'data');
+    }
+
+    public function test_a_base_category_name_cannot_be_added_again(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Код и IDE'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('name');
     }
 
     public function test_any_user_can_add_a_category(): void
