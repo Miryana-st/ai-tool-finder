@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ToolState } from "./useTool";
-import { mutedTextClassName } from "./styles";
+import { mutedTextClassName } from "@/styles/classNames";
 
 // What to show while a tool is not ready: loading, not found or an error.
 export default function ToolStateMessage({ state }: { state: Exclude<ToolState, { status: "ready" }> }) {

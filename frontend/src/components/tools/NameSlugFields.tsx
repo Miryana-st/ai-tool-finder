@@ -2,7 +2,7 @@
 
 import { useState, type KeyboardEvent } from "react";
 import { SLUG_PATTERN, slugify } from "@/lib/slug";
-import { fieldErrorClassName, inputClassName, mutedTextClassName } from "./styles";
+import { fieldErrorClassName, inputClassName, mutedTextClassName } from "@/styles/classNames";
 
 type Props = {
   name: string;
@@ -65,9 +65,11 @@ export default function NameSlugFields({
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Slug
-        <span className={`text-xs font-normal ${mutedTextClassName}`}>
-          Задължителен. Използва се в линковете и филтрите, напр. „voice-video“.
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          Slug
+          <span className={`text-xs font-normal ${mutedTextClassName}`}>
+            Задължителен. Използва се в линковете и филтрите, напр. „voice-video“.
+          </span>
         </span>
         <input
           type="text"

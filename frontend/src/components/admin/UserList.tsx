@@ -6,10 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import * as api from "@/lib/api";
 import { ApiError, type CompanyRole, type Paginated, type User } from "@/lib/api";
 import {
+  dangerButtonClassName,
   inputClassName,
   mutedTextClassName,
   secondaryButtonClassName,
-} from "@/components/tools/styles";
+} from "@/styles/classNames";
 
 const SEARCH_DELAY = 300;
 
@@ -46,6 +47,8 @@ export default function UserList() {
   const [companyRoles, setCompanyRoles] = useState<CompanyRole[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
+  // Bumped after a delete, so the page is loaded again (totals and the next user move up).
+  const [reloadKey, setReloadKey] = useState(0);
 
   const updateQuery = useCallback(
     (changes: Record<string, string | null>) => {
@@ -117,7 +120,7 @@ export default function UserList() {
       });
 
     return () => controller.abort();
-  }, [query, urlSearch, systemRole, companyRole, page]);
+  }, [query, urlSearch, systemRole, companyRole, page, reloadKey]);
 
   const replaceUser = (updated: User) =>
     setUsers((current) =>
@@ -170,6 +173,36 @@ export default function UserList() {
         setMessage({ type: "error", text: api.fieldError(error.errors, "system_role") ?? error.message });
       } else {
         console.error("Could not change the system role.", error);
+        setMessage({ type: "error", text: "Действието не беше успешно. Опитай отново." });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const deleteUser = async (user: User) => {
+    if (!window.confirm(`Да изтрия ли акаунта на ${user.name} (${user.email})? Това действие е необратимо.`)) {
+      return;
+    }
+
+    setBusyId(user.id);
+    setMessage(null);
+
+    try {
+      await api.deleteUser(user.id);
+      setMessage({ type: "success", text: `Акаунтът на ${user.name} е изтрит.` });
+      setReloadKey((key) => key + 1);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setMessage({
+          type: "error",
+          text: `${user.name} е добавил AI инструменти, затова акаунтът не може да се изтрие.`,
+        });
+      } else if (error instanceof ApiError && error.status === 404) {
+        setMessage({ type: "error", text: `Акаунтът на ${user.name} вече е изтрит.` });
+        setReloadKey((key) => key + 1);
+      } else {
+        console.error("Could not delete the user.", error);
         setMessage({ type: "error", text: "Действието не беше успешно. Опитай отново." });
       }
     } finally {
@@ -280,15 +313,28 @@ export default function UserList() {
                     <td className="px-4 py-3">{user.email}</td>
                     <td className="px-4 py-3">{user.company_role_label}</td>
                     <td className="px-4 py-3">{user.system_role_label}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void toggleAdmin(user)}
-                        disabled={busyId !== null}
-                        className={secondaryButtonClassName}
-                      >
-                        {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void toggleAdmin(user)}
+                          disabled={busyId !== null}
+                          className={secondaryButtonClassName}
+                        >
+                          {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
+                        </button>
+                        {/* Admins cannot delete their own account (the backend refuses too). */}
+                        {user.id !== currentUser?.id && (
+                          <button
+                            type="button"
+                            onClick={() => void deleteUser(user)}
+                            disabled={busyId !== null}
+                            className={dangerButtonClassName}
+                          >
+                            Изтрий
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

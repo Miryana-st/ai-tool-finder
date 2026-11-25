@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
-import Header from "@/components/Header";
+import { Geist } from "next/font/google";
+import AppShell from "@/components/layout/AppShell";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
-import "./globals.css";
+import { cn } from "@/lib/utils";
+import "@/styles/globals.css";
+
+const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "AI-Finder",
@@ -10,13 +15,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="bg" className="h-full antialiased">
+    <html lang="bg" className={cn("h-full font-sans antialiased", geist.variable)}>
       <body className="flex min-h-full flex-col">
         <AuthProvider>
-          <Header />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-            {children}
-          </main>
+          <TooltipProvider>
+            <AppShell>{children}</AppShell>
+          </TooltipProvider>
         </AuthProvider>
       </body>
     </html>

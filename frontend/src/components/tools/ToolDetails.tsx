@@ -13,7 +13,7 @@ import {
   dangerButtonClassName,
   mutedTextClassName,
   secondaryButtonClassName,
-} from "./styles";
+} from "@/styles/classNames";
 
 export default function ToolDetails() {
   const { slug } = useParams<{ slug: string }>();

@@ -23,7 +23,7 @@ import {
   mutedTextClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
-} from "./styles";
+} from "@/styles/classNames";
 
 type TextFields = Pick<ToolInput, "name" | "url" | "documentation_url" | "description" | "how_to_use"> & {
   examples: string;

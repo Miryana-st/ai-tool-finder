@@ -19,9 +19,25 @@ export type MenuItem = {
   href: string | null;
 };
 
+// Approved categories with the most tools (deleted tools are not counted).
+export type PopularCategory = {
+  id: number;
+  name: string;
+  slug: string;
+  tools_count: number;
+};
+
+export type DashboardStats = {
+  tools_total: number;
+  // Tools marked as useful for the user's company role.
+  tools_for_company_role: number;
+  popular_categories: PopularCategory[];
+};
+
 export type Dashboard = {
   user: User;
   menu: MenuItem[];
+  stats: DashboardStats;
 };
 
 export type ValidationErrors = Record<string, string[]>;
@@ -282,6 +298,11 @@ export async function getUsers(
 ): Promise<Paginated<User>> {
   const response = await apiFetch(`/api/users${toQuery(filters)}`, { signal });
   return response.json();
+}
+
+// Admin only, not oneself. A user who has added tools cannot be deleted (409).
+export async function deleteUser(id: number): Promise<void> {
+  await apiFetch(`/api/users/${id}`, { method: "DELETE" });
 }
 
 // Admin only. Taking the role from the last admin is refused (422 on `system_role`).

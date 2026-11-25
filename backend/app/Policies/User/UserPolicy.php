@@ -21,4 +21,14 @@ class UserPolicy
     {
         return $user->isAdmin();
     }
+
+    /**
+     * Determine whether the user can delete the given user.
+     *
+     * Admins cannot delete themselves, so the last admin always remains.
+     */
+    public function delete(User $user, User $target): bool
+    {
+        return $user->isAdmin() && $user->isNot($target);
+    }
 }

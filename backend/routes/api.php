@@ -29,6 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index'])
         ->name('api.users.index');
 
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])
+        ->name('api.users.destroy');
+
     Route::patch('/users/{user}/system-role', UserSystemRoleController::class)
         ->name('api.users.system-role.update');
 

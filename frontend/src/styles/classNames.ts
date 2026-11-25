@@ -1,4 +1,4 @@
-// Shared Tailwind classes for the AI tool pages.
+// Shared Tailwind classes for buttons, fields and text (tool and admin pages).
 
 export const inputClassName =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal dark:border-zinc-700 dark:bg-zinc-900";
