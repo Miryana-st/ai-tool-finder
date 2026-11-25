@@ -38,7 +38,8 @@ class StoreToolRequest extends FormRequest
             'company_roles' => ['required', 'array', 'min:1'],
             'company_roles.*' => ['integer', 'distinct', 'exists:company_roles,id'],
             'categories' => ['required', 'array', 'min:1'],
-            'categories.*' => ['integer', 'distinct', 'exists:categories,id'],
+            // Pending suggestions cannot be picked until an admin approves them.
+            'categories.*' => ['integer', 'distinct', Rule::exists('categories', 'id')->whereNotNull('approved_at')],
             'tags' => ['nullable', 'array'],
             'tags.*' => [
                 'string',

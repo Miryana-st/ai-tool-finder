@@ -32,10 +32,16 @@ export type CompanyRole = {
   name: string;
 };
 
+// Users suggest categories; only approved ones are offered in the tool form.
 export type Category = {
   id: number;
   name: string;
   slug: string;
+  description: string | null;
+  is_approved: boolean;
+  // Only in the admin list of pending suggestions; null if the user was deleted.
+  suggested_by?: { id: number; name: string } | null;
+  created_at: string;
 };
 
 export type Tag = {
@@ -234,13 +240,36 @@ export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
   return body.data;
 }
 
-export async function createCategory(name: string): Promise<Category> {
+// An admin's category is approved right away; anybody else's waits for an admin.
+export async function suggestCategory(
+  name: string,
+  description: string | null,
+): Promise<Category> {
   const response = await apiFetch("/api/categories", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, description }),
   });
   const body: { data: Category } = await response.json();
   return body.data;
+}
+
+// Admin only.
+export async function getPendingCategories(signal?: AbortSignal): Promise<Category[]> {
+  const response = await apiFetch("/api/categories/pending", { signal });
+  const body: { data: Category[] } = await response.json();
+  return body.data;
+}
+
+// Admin only.
+export async function approveCategory(id: number): Promise<Category> {
+  const response = await apiFetch(`/api/categories/${id}/approve`, { method: "POST" });
+  const body: { data: Category } = await response.json();
+  return body.data;
+}
+
+// Admin only. The suggestion is deleted.
+export async function rejectCategory(id: number): Promise<void> {
+  await apiFetch(`/api/categories/${id}`, { method: "DELETE" });
 }
 
 export async function getTags(search = "", signal?: AbortSignal): Promise<Tag[]> {

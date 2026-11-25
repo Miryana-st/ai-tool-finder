@@ -33,23 +33,14 @@ class CategoryTagApiTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->getJson('/api/categories')
             ->assertOk()
-            ->assertJsonCount(6, 'data')
-            ->assertJsonFragment(['slug' => 'coding', 'name' => 'Код и IDE'])
-            ->assertJsonFragment(['slug' => 'design', 'name' => 'Дизайн и изображение'])
-            ->assertJsonFragment(['slug' => 'data', 'name' => 'Данни и анализ'])
-            ->assertJsonFragment(['slug' => 'automation', 'name' => 'Автоматизация и агенти'])
-            ->assertJsonFragment(['slug' => 'testing', 'name' => 'Тестване и качество'])
-            ->assertJsonFragment(['slug' => 'content', 'name' => 'Текст и съдържание']);
-    }
-
-    public function test_a_user_category_is_added_next_to_the_base_ones(): void
-    {
-        $this->actingAs(User::factory()->create())
-            ->postJson('/api/categories', ['name' => 'Глас и видео'])
-            ->assertCreated()
-            ->assertJsonPath('data.slug', 'glas-i-video');
-
-        $this->getJson('/api/categories')->assertJsonCount(7, 'data');
+            ->assertJsonCount(7, 'data')
+            ->assertJsonFragment(['slug' => 'coding', 'name' => 'Код и IDE', 'description' => 'Cursor, Copilot, плъгини за ревю, генератори на код'])
+            ->assertJsonFragment(['slug' => 'design', 'name' => 'Дизайн и изображение', 'description' => 'UI генератори, Figma плъгини, изображения, икони'])
+            ->assertJsonFragment(['slug' => 'data', 'name' => 'Данни и анализ', 'description' => 'SQL асистенти, notebooks, таблици, BI'])
+            ->assertJsonFragment(['slug' => 'automation', 'name' => 'Автоматизация и агенти', 'description' => 'Агенти, workflow, n8n, свързване на вътрешни системи'])
+            ->assertJsonFragment(['slug' => 'testing', 'name' => 'Тестване и качество', 'description' => 'Генериране на тестове, преглед на бъгове, тестови данни'])
+            ->assertJsonFragment(['slug' => 'content', 'name' => 'Текст и съдържание', 'description' => 'Писане, превод, редактура, вътрешни комуникации'])
+            ->assertJsonFragment(['slug' => 'other', 'name' => 'Друго', 'is_approved' => true]);
     }
 
     public function test_a_base_category_name_cannot_be_added_again(): void

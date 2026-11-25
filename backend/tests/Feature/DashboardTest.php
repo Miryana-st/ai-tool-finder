@@ -15,6 +15,7 @@ class DashboardTest extends TestCase
     private const array ADMIN_MENU = [
         ['key' => 'users', 'label' => 'Потребители', 'href' => null],
         ['key' => 'roles', 'label' => 'Роли', 'href' => null],
+        ['key' => 'categories', 'label' => 'Категории', 'href' => '/admin/categories'],
         ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
         ['key' => 'settings', 'label' => 'Настройки', 'href' => null],
     ];

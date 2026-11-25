@@ -19,11 +19,13 @@ return [
 
     'hrefs' => [
         'tools' => '/tools',
+        'categories' => '/admin/categories',
     ],
 
     'admin' => [
         'users' => 'Потребители',
         'roles' => 'Роли',
+        'categories' => 'Категории',
         'tools' => 'AI инструменти',
         'settings' => 'Настройки',
     ],

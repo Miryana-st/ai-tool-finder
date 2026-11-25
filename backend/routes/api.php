@@ -41,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');
+    Route::get('/categories/pending', [CategoryController::class, 'pending'])->name('api.categories.pending');
+    Route::post('/categories/{category}/approve', [CategoryController::class, 'approve'])->name('api.categories.approve');
+    Route::delete('/categories/{category}', [CategoryController::class, 'reject'])->name('api.categories.reject');
 
     Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 });
