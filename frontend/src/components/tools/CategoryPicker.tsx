@@ -1,11 +1,21 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import * as api from "@/lib/api";
 import { ApiError, type Category, type ValidationErrors } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import NameSlugFields, { canSendNameSlug } from "./NameSlugFields";
+import RequiredMark from "./RequiredMark";
 import {
   fieldErrorClassName,
+  formFieldClassName,
   inputClassName,
   mutedTextClassName,
   secondaryButtonClassName,
@@ -84,32 +94,48 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
   const nameError = api.fieldError(errors, "name");
   const descriptionError = api.fieldError(errors, "description");
 
+  const selectedNames = categories
+    .filter((category) => selected.includes(category.id))
+    .map((category) => category.name);
+
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-sm font-medium">Категории</legend>
+      <legend className="mb-2 text-sm font-semibold">
+        Категория <RequiredMark />
+      </legend>
 
-      {categories.length === 0 && (
+      {categories.length === 0 ? (
         <p className={`text-sm ${mutedTextClassName}`}>Все още няма категории.</p>
-      )}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {categories.map((category) => (
-          <label key={category.id} className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={selected.includes(category.id)}
-              onChange={() => onToggle(category.id)}
-              className="mt-1"
-            />
-            <span className="flex flex-col">
-              {category.name}
-              {category.description && (
-                <span className={`text-xs ${mutedTextClassName}`}>{category.description}</span>
-              )}
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-invalid={Boolean(error)}
+            className={cn(formFieldClassName, "flex h-11 items-center justify-between gap-2 text-left")}
+          >
+            <span className={cn("truncate", selectedNames.length === 0 && "text-muted-foreground")}>
+              {selectedNames.length > 0 ? selectedNames.join(", ") : "Избери категория…"}
             </span>
-          </label>
-        ))}
-      </div>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-72">
+            {categories.map((category) => (
+              <DropdownMenuCheckboxItem
+                key={category.id}
+                checked={selected.includes(category.id)}
+                onCheckedChange={() => onToggle(category.id)}
+                className="py-1.5"
+              >
+                <span className="flex flex-col">
+                  {category.name}
+                  {category.description && (
+                    <span className="text-xs text-muted-foreground">{category.description}</span>
+                  )}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {error && <span className={fieldErrorClassName}>{error}</span>}
 

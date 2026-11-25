@@ -17,13 +17,13 @@ type Stat = {
 export default function DashboardStatCards({ stats }: { stats: DashboardStats }) {
   const items: Stat[] = [
     {
-      label: "Общ брой Tool-ове",
+      label: "Общ брой инструменти",
       value: stats.tools_total,
       icon: Box,
       iconClassName: "bg-violet-100 text-violet-600",
     },
     {
-      label: "Tool-а, съвпадащи с твоята професия",
+      label: "Инструменти, съвпадащи с твоята професия",
       value: stats.tools_for_company_role,
       icon: UsersRound,
       iconClassName: "bg-emerald-100 text-emerald-600",

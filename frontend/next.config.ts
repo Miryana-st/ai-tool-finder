@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // Turbopack misses file changes on the Windows bind mount in Docker, so it polls there.
+  // WATCHPACK_POLLING is set only in docker-compose; elsewhere native watching is used.
+  ...(process.env.WATCHPACK_POLLING === "true" && {
+    watchOptions: { pollIntervalMs: 1000 },
+  }),
   turbopack: {
     rules: {
       "*.css": {

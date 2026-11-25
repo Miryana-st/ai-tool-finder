@@ -1,8 +1,10 @@
 "use client";
 
+import { Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { buttonVariants } from "@/components/ui/button";
 import * as api from "@/lib/api";
 import {
   ApiError,
@@ -14,16 +16,12 @@ import {
   type ToolInput,
   type ValidationErrors,
 } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
+import RequiredMark from "./RequiredMark";
 import TagInput from "./TagInput";
 import ToolImagesInput from "./ToolImagesInput";
-import {
-  fieldErrorClassName,
-  inputClassName,
-  mutedTextClassName,
-  primaryButtonClassName,
-  secondaryButtonClassName,
-} from "@/styles/classNames";
+import { fieldErrorClassName, formFieldClassName, mutedTextClassName } from "@/styles/classNames";
 
 type TextFields = Pick<ToolInput, "name" | "url" | "documentation_url" | "description" | "how_to_use"> & {
   examples: string;
@@ -133,7 +131,11 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="flex flex-col gap-6 rounded-2xl border bg-card p-5 text-card-foreground shadow-sm md:p-6"
+    >
       {formError && (
         <p role="alert" className="text-sm text-red-600">
           {formError}
@@ -141,131 +143,151 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
       )}
       {optionsError && (
         <p role="alert" className="text-sm text-red-600">
-          Ролите и категориите не можаха да се заредят. Презареди страницата.
+          Длъжностите и категориите не можаха да се заредят. Презареди страницата.
         </p>
       )}
 
-      <TextField label="Име" error={error("name")}>
-        <input
-          type="text"
-          value={fields.name}
-          onChange={(event) => setField("name", event.target.value)}
-          maxLength={255}
-          aria-invalid={Boolean(error("name"))}
-          className={inputClassName}
-        />
-      </TextField>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <ToolImagesInput
+              toolId={tool?.id ?? null}
+              images={images}
+              onImagesChange={setImages}
+              files={files}
+              onFilesChange={setFiles}
+            />
+            {tool && (
+              <p className={`text-xs ${mutedTextClassName}`}>Снимките се качват и изтриват веднага.</p>
+            )}
+          </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <TextField label="Линк към инструмента" error={error("url")}>
-          <input
-            type="url"
-            value={fields.url}
-            onChange={(event) => setField("url", event.target.value)}
-            placeholder="https://"
-            aria-invalid={Boolean(error("url"))}
-            className={inputClassName}
+          <CategoryPicker
+            categories={categories}
+            selected={categoryIds}
+            onToggle={(id) => setCategoryIds((current) => toggle(current, id))}
+            onCreated={(category) => {
+              setCategories((current) =>
+                [...current, category].sort((a, b) => a.name.localeCompare(b.name)),
+              );
+              setCategoryIds((current) => [...current, category.id]);
+            }}
+            error={error("categories")}
           />
-        </TextField>
 
-        <TextField label="Линк към документацията" error={error("documentation_url")}>
-          <input
-            type="url"
-            value={fields.documentation_url}
-            onChange={(event) => setField("documentation_url", event.target.value)}
-            placeholder="https://"
-            aria-invalid={Boolean(error("documentation_url"))}
-            className={inputClassName}
-          />
-        </TextField>
+          <TagInput tags={tags} onChange={setTags} error={error("tags")} />
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <TextField label="Име" required error={error("name")}>
+            <input
+              type="text"
+              value={fields.name}
+              onChange={(event) => setField("name", event.target.value)}
+              maxLength={255}
+              placeholder="напр. ChatGPT"
+              aria-invalid={Boolean(error("name"))}
+              className={cn(formFieldClassName, "h-11")}
+            />
+          </TextField>
+
+          <TextField label="URL на инструмента" required error={error("url")}>
+            <input
+              type="url"
+              value={fields.url}
+              onChange={(event) => setField("url", event.target.value)}
+              placeholder="https://…"
+              aria-invalid={Boolean(error("url"))}
+              className={cn(formFieldClassName, "h-11")}
+            />
+          </TextField>
+
+          <TextField label="Официална документация" required error={error("documentation_url")}>
+            <input
+              type="url"
+              value={fields.documentation_url}
+              onChange={(event) => setField("documentation_url", event.target.value)}
+              placeholder="https://…"
+              aria-invalid={Boolean(error("documentation_url"))}
+              className={cn(formFieldClassName, "h-11")}
+            />
+          </TextField>
+
+          <TextField label="Описание" required error={error("description")}>
+            <textarea
+              value={fields.description}
+              onChange={(event) => setField("description", event.target.value)}
+              rows={4}
+              placeholder="Какво представлява инструментът и с какво е специален? Поддържа Markdown."
+              aria-invalid={Boolean(error("description"))}
+              className={formFieldClassName}
+            />
+          </TextField>
+
+          <TextField label="Как се използва" required error={error("how_to_use")}>
+            <textarea
+              value={fields.how_to_use}
+              onChange={(event) => setField("how_to_use", event.target.value)}
+              rows={4}
+              placeholder="Стъпка по стъпка… Поддържа Markdown."
+              aria-invalid={Boolean(error("how_to_use"))}
+              className={formFieldClassName}
+            />
+          </TextField>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-semibold">
+              Длъжност <RequiredMark />
+            </legend>
+            <div className="flex flex-col gap-2.5">
+              {companyRoles.map((role) => (
+                <label key={role.id} className="flex cursor-pointer items-center gap-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={companyRoleIds.includes(role.id)}
+                    onChange={() => setCompanyRoleIds((current) => toggle(current, role.id))}
+                    className="size-4 accent-violet-600"
+                  />
+                  {role.name}
+                </label>
+              ))}
+            </div>
+            {error("company_roles") && <span className={fieldErrorClassName}>{error("company_roles")}</span>}
+          </fieldset>
+
+          <TextField label="Примери (не е задължително)" error={error("examples")}>
+            <textarea
+              value={fields.examples}
+              onChange={(event) => setField("examples", event.target.value)}
+              rows={3}
+              placeholder="Markdown, напр. - [Заглавие](https://пример)"
+              aria-invalid={Boolean(error("examples"))}
+              className={formFieldClassName}
+            />
+          </TextField>
+        </div>
       </div>
 
-      <TextField label="Описание" hint="Поддържа Markdown." error={error("description")}>
-        <textarea
-          value={fields.description}
-          onChange={(event) => setField("description", event.target.value)}
-          rows={5}
-          aria-invalid={Boolean(error("description"))}
-          className={inputClassName}
-        />
-      </TextField>
-
-      <TextField label="Как се използва" hint="Поддържа Markdown." error={error("how_to_use")}>
-        <textarea
-          value={fields.how_to_use}
-          onChange={(event) => setField("how_to_use", event.target.value)}
-          rows={5}
-          aria-invalid={Boolean(error("how_to_use"))}
-          className={inputClassName}
-        />
-      </TextField>
-
-      <TextField
-        label="Реални примери"
-        hint="По желание. Markdown, напр. - [Заглавие](https://пример)"
-        error={error("examples")}
-      >
-        <textarea
-          value={fields.examples}
-          onChange={(event) => setField("examples", event.target.value)}
-          rows={4}
-          aria-invalid={Boolean(error("examples"))}
-          className={inputClassName}
-        />
-      </TextField>
-
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">Роли във фирмата</legend>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {companyRoles.map((role) => (
-            <label key={role.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={companyRoleIds.includes(role.id)}
-                onChange={() => setCompanyRoleIds((current) => toggle(current, role.id))}
-              />
-              {role.name}
-            </label>
-          ))}
-        </div>
-        {error("company_roles") && <span className={fieldErrorClassName}>{error("company_roles")}</span>}
-      </fieldset>
-
-      <CategoryPicker
-        categories={categories}
-        selected={categoryIds}
-        onToggle={(id) => setCategoryIds((current) => toggle(current, id))}
-        onCreated={(category) => {
-          setCategories((current) =>
-            [...current, category].sort((a, b) => a.name.localeCompare(b.name)),
-          );
-          setCategoryIds((current) => [...current, category.id]);
-        }}
-        error={error("categories")}
-      />
-
-      <TagInput tags={tags} onChange={setTags} error={error("tags")} />
-
-      <ToolImagesInput
-        toolId={tool?.id ?? null}
-        images={images}
-        onImagesChange={setImages}
-        files={files}
-        onFilesChange={setFiles}
-      />
-      {tool && (
-        <p className={`-mt-4 text-xs ${mutedTextClassName}`}>
-          Скрийншотите се качват и изтриват веднага.
-        </p>
-      )}
-
-      <div className="flex gap-3">
-        <button type="submit" disabled={isSubmitting} className={primaryButtonClassName}>
-          {isSubmitting ? "Запазване…" : tool ? "Запази промените" : "Добави инструмента"}
-        </button>
-        <Link href={tool ? `/tools/${tool.slug}` : "/tools"} className={secondaryButtonClassName}>
-          Отказ
+      <div className="flex justify-end gap-3 border-t pt-5">
+        <Link
+          href={tool ? `/tools/${tool.slug}` : "/tools"}
+          className={cn(buttonVariants({ variant: "outline" }), "h-11 rounded-xl px-6")}
+        >
+          Откажи
         </Link>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={cn(
+            buttonVariants(),
+            "h-11 rounded-xl bg-violet-600 px-6 text-white shadow-md shadow-violet-600/30 hover:bg-violet-500",
+          )}
+        >
+          <Send aria-hidden="true" />
+          {isSubmitting ? "Запазване…" : "Запази"}
+        </button>
       </div>
     </form>
   );
@@ -273,19 +295,26 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
 
 function TextField({
   label,
-  hint,
+  required = false,
   error,
   children,
 }: {
   label: string;
-  hint?: string;
+  required?: boolean;
   error: string | null;
   children: ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm font-medium">
-      {label}
-      {hint && <span className={`text-xs font-normal ${mutedTextClassName}`}>{hint}</span>}
+    <label className="flex flex-col gap-2 text-sm font-semibold">
+      <span>
+        {label}
+        {required && (
+          <>
+            {" "}
+            <RequiredMark />
+          </>
+        )}
+      </span>
       {children}
       {error && <span className={fieldErrorClassName}>{error}</span>}
     </label>
