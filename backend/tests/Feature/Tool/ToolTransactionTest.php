@@ -7,13 +7,15 @@ use App\Models\Tool\Tag;
 use App\Models\Tool\Tool;
 use App\Models\User\CompanyRole;
 use App\Models\User\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Tests\TestCase;
 
 /**
  * Creating and updating a tool is all or nothing (issue #25). A failure while
- * creating a tag, the last step, must undo the tool and its pivot rows.
+ * attaching the tags, the last step, must undo the tool and its pivot rows.
  */
 class ToolTransactionTest extends TestCase
 {
@@ -23,7 +25,12 @@ class ToolTransactionTest extends TestCase
     {
         parent::setUp();
 
-        Tag::creating(fn () => throw new RuntimeException('Simulated failure'));
+        DB::listen(function (QueryExecuted $query) {
+            // The quotes around the table name depend on the database driver.
+            if (preg_match('/^insert into [`"]?tag_tool[`"]?/', $query->sql)) {
+                throw new RuntimeException('Simulated failure');
+            }
+        });
     }
 
     /**
@@ -39,7 +46,7 @@ class ToolTransactionTest extends TestCase
             'how_to_use' => 'Ask it a question.',
             'company_roles' => [CompanyRole::where('slug', 'backend')->value('id')],
             'categories' => [Category::factory()->create()->id],
-            'tags' => ['Brand New Tag'],
+            'tags' => [Tag::factory()->create()->id],
         ];
     }
 

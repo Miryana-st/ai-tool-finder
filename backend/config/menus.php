@@ -20,12 +20,14 @@ return [
     'hrefs' => [
         'tools' => '/tools',
         'categories' => '/admin/categories',
+        'tags' => '/admin/tags',
     ],
 
     'admin' => [
         'users' => 'Потребители',
         'roles' => 'Роли',
         'categories' => 'Категории',
+        'tags' => 'Тагове',
         'tools' => 'AI инструменти',
         'settings' => 'Настройки',
     ],

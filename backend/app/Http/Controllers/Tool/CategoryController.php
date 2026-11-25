@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Tool;
 
-use App\Actions\Tool\SuggestCategory;
+use App\Actions\Tool\SaveSuggestion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreCategoryRequest;
 use App\Http\Resources\Tool\CategoryResource;
@@ -26,9 +26,9 @@ class CategoryController extends Controller
      * Suggest a category (the "Suggest a category" button in the tool form).
      * An admin's category is approved right away.
      */
-    public function store(StoreCategoryRequest $request, SuggestCategory $suggestCategory): JsonResponse
+    public function store(StoreCategoryRequest $request, SaveSuggestion $saveSuggestion): JsonResponse
     {
-        $category = $suggestCategory->handle($request->user(), $request->validated());
+        $category = $saveSuggestion->handle($request->user(), new Category($request->validated()));
 
         return (new CategoryResource($category))->response()->setStatusCode(Response::HTTP_CREATED);
     }

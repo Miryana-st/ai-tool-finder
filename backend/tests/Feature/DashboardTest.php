@@ -16,6 +16,7 @@ class DashboardTest extends TestCase
         ['key' => 'users', 'label' => 'Потребители', 'href' => null],
         ['key' => 'roles', 'label' => 'Роли', 'href' => null],
         ['key' => 'categories', 'label' => 'Категории', 'href' => '/admin/categories'],
+        ['key' => 'tags', 'label' => 'Тагове', 'href' => '/admin/tags'],
         ['key' => 'tools', 'label' => 'AI инструменти', 'href' => '/tools'],
         ['key' => 'settings', 'label' => 'Настройки', 'href' => null],
     ];

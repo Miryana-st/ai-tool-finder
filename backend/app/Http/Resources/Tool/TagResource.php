@@ -22,6 +22,12 @@ class TagResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'is_approved' => $this->isApproved(),
+            'suggested_by' => $this->whenLoaded('suggestedBy', fn () => $this->suggestedBy ? [
+                'id' => $this->suggestedBy->id,
+                'name' => $this->suggestedBy->name,
+            ] : null),
+            'created_at' => $this->created_at,
         ];
     }
 }
