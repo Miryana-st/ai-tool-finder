@@ -3,9 +3,7 @@
 namespace App\Http\Requests\Tool;
 
 use App\Models\Tool\Tool;
-use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
@@ -41,15 +39,8 @@ class StoreToolRequest extends FormRequest
             // Pending suggestions cannot be picked until an admin approves them.
             'categories.*' => ['integer', 'distinct', Rule::exists('categories', 'id')->whereNotNull('approved_at')],
             'tags' => ['nullable', 'array'],
-            'tags.*' => [
-                'string',
-                'max:30',
-                function (string $attribute, mixed $value, Closure $fail) {
-                    if (is_string($value) && Str::slug($value) === '') {
-                        $fail('The tag must contain at least one letter or number.');
-                    }
-                },
-            ],
+            // Tags are picked from the approved ones; new tags are suggested separately.
+            'tags.*' => ['integer', 'distinct', Rule::exists('tags', 'id')->whereNotNull('approved_at')],
         ];
     }
 
@@ -59,40 +50,5 @@ class StoreToolRequest extends FormRequest
     protected function uniqueNameRule(): Unique
     {
         return Rule::unique(Tool::class);
-    }
-
-    /**
-     * Normalize the tags: trim them and drop empty and case-insensitive duplicates.
-     * Empty strings arrive as null (ConvertEmptyStringsToNull middleware).
-     */
-    protected function prepareForValidation(): void
-    {
-        $tags = $this->input('tags');
-
-        if (! is_array($tags)) {
-            return;
-        }
-
-        $normalized = [];
-
-        foreach ($tags as $tag) {
-            if ($tag === null) {
-                continue;
-            }
-
-            if (! is_string($tag)) {
-                $normalized[] = $tag;
-
-                continue;
-            }
-
-            $tag = trim($tag);
-
-            if ($tag !== '') {
-                $normalized[mb_strtolower($tag)] ??= $tag;
-            }
-        }
-
-        $this->merge(['tags' => array_values($normalized)]);
     }
 }

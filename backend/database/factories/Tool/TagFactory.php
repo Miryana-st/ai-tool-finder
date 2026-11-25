@@ -3,6 +3,7 @@
 namespace Database\Factories\Tool;
 
 use App\Models\Tool\Tag;
+use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,18 @@ class TagFactory extends Factory
         return [
             'name' => $name = Str::title(fake()->unique()->words(2, true)),
             'slug' => Str::slug($name),
+            'approved_at' => now(),
         ];
+    }
+
+    /**
+     * A suggestion waiting for an admin, made by the given user (or a new one).
+     */
+    public function pending(?User $suggestedBy = null): static
+    {
+        return $this->state(fn () => [
+            'approved_at' => null,
+            'suggested_by_id' => $suggestedBy?->id ?? User::factory(),
+        ]);
     }
 }

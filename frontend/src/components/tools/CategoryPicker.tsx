@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import * as api from "@/lib/api";
 import { ApiError, type Category, type ValidationErrors } from "@/lib/api";
+import NameSlugFields, { canSendNameSlug } from "./NameSlugFields";
 import {
   fieldErrorClassName,
   inputClassName,
@@ -24,6 +25,7 @@ type Props = {
 export default function CategoryPicker({ categories, selected, onToggle, onCreated, error }: Props) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
   const close = () => {
     setIsSuggesting(false);
     setName("");
+    setSlug("");
     setDescription("");
     setErrors({});
     setFormError(null);
@@ -45,7 +48,11 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
     setNotice(null);
 
     try {
-      const category = await api.suggestCategory(name.trim(), description.trim() || null);
+      const category = await api.suggestCategory({
+        name: name.trim(),
+        slug,
+        description: description.trim() || null,
+      });
 
       if (category.is_approved) {
         onCreated(category);
@@ -68,10 +75,8 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
     }
   };
 
-  // Enter in the name field must send the suggestion, not submit the whole tool form.
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
+  const send = () => {
+    if (canSendNameSlug(name, slug) && !isSaving) {
       void suggest();
     }
   };
@@ -118,20 +123,16 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
         <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
           <p className="text-sm font-medium">Предложи категория</p>
 
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Име
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              onKeyDown={handleKeyDown}
-              maxLength={50}
-              autoFocus
-              aria-invalid={Boolean(nameError)}
-              className={inputClassName}
-            />
-            {nameError && <span className={fieldErrorClassName}>{nameError}</span>}
-          </label>
+          <NameSlugFields
+            name={name}
+            slug={slug}
+            onNameChange={setName}
+            onSlugChange={setSlug}
+            nameError={nameError}
+            slugError={api.fieldError(errors, "slug")}
+            maxLength={50}
+            onEnter={send}
+          />
 
           <label className="flex flex-col gap-1 text-sm font-medium">
             Описание
@@ -158,8 +159,8 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => void suggest()}
-              disabled={isSaving || name.trim() === ""}
+              onClick={send}
+              disabled={isSaving || !canSendNameSlug(name, slug)}
               className={secondaryButtonClassName}
             >
               {isSaving ? "Изпращане…" : "Изпрати"}

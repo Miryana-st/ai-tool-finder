@@ -54,10 +54,10 @@ class CategoryTagApiTest extends TestCase
     public function test_any_user_can_add_a_category(): void
     {
         $this->actingAs(User::factory()->create())
-            ->postJson('/api/categories', ['name' => 'Генериране на код'])
+            ->postJson('/api/categories', ['name' => 'Генериране на код', 'slug' => 'code-generation'])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Генериране на код')
-            ->assertJsonPath('data.slug', 'generirane-na-kod');
+            ->assertJsonPath('data.slug', 'code-generation');
 
         $this->assertDatabaseHas('categories', ['name' => 'Генериране на код']);
     }
@@ -79,6 +79,7 @@ class CategoryTagApiTest extends TestCase
 
     public function test_tags_are_listed_and_searchable(): void
     {
+        Tag::query()->delete();
         Tag::factory()->create(['name' => 'LLM']);
         Tag::factory()->create(['name' => 'Images']);
         Tag::factory()->create(['name' => 'Image Editing']);

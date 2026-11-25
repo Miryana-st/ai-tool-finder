@@ -3,6 +3,7 @@
 namespace Tests\Feature\Tool;
 
 use App\Models\Tool\Category;
+use App\Models\Tool\Tag;
 use App\Models\Tool\Tool;
 use App\Models\User\CompanyRole;
 use App\Models\User\User;
@@ -137,7 +138,7 @@ class ToolValidationTest extends TestCase
     public function test_tags_are_validated(): void
     {
         $this->actingAs(User::factory()->create())
-            ->postJson('/api/tools', $this->payload(['tags' => [str_repeat('a', 31), ['nested'], '!!!']]))
+            ->postJson('/api/tools', $this->payload(['tags' => ['Chat', ['nested'], 999999]]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['tags.0', 'tags.1', 'tags.2']);
 
@@ -147,10 +148,21 @@ class ToolValidationTest extends TestCase
             ->assertJsonValidationErrors('tags');
     }
 
-    public function test_tag_of_exactly_30_characters_is_allowed(): void
+    public function test_only_approved_tags_can_be_picked(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->postJson('/api/tools', $this->payload(['tags' => [str_repeat('a', 30)]]))
-            ->assertCreated();
+        $user = User::factory()->create();
+        $pending = Tag::factory()->pending($user)->create();
+        $approved = Tag::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/tools', $this->payload(['tags' => [$approved->id, $pending->id]]))
+            ->assertUnprocessable()
+            ->assertJsonMissingValidationErrors('tags.0')
+            ->assertJsonValidationErrors('tags.1');
+
+        $this->actingAs($user)
+            ->postJson('/api/tools', $this->payload(['tags' => [$approved->id]]))
+            ->assertCreated()
+            ->assertJsonPath('data.tags.0.slug', $approved->slug);
     }
 }

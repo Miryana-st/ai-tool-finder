@@ -44,11 +44,19 @@ export type Category = {
   created_at: string;
 };
 
+// Tags work like categories: users suggest them, only approved ones can be picked.
 export type Tag = {
   id: number;
   name: string;
   slug: string;
+  is_approved: boolean;
+  // Only in the admin list of pending suggestions; null if the user was deleted.
+  suggested_by?: { id: number; name: string } | null;
+  created_at: string;
 };
+
+// What users suggest and an admin approves; also the API path segment.
+export type SuggestionKind = "categories" | "tags";
 
 export type ToolImage = {
   id: number;
@@ -77,7 +85,7 @@ export type Tool = {
   updated_at: string;
 };
 
-// Data sent when creating or replacing a tool. Relations are sent as ids, tags as names.
+// Data sent when creating or replacing a tool. Relations, tags included, are sent as ids.
 export type ToolInput = {
   name: string;
   url: string;
@@ -87,7 +95,7 @@ export type ToolInput = {
   examples: string | null;
   company_roles: number[];
   categories: number[];
-  tags: string[];
+  tags: number[];
 };
 
 // `company_role`, `category` and `tag` are slugs.
@@ -241,37 +249,50 @@ export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
 }
 
 // An admin's category is approved right away; anybody else's waits for an admin.
-export async function suggestCategory(
-  name: string,
-  description: string | null,
-): Promise<Category> {
+export async function suggestCategory(input: {
+  name: string;
+  slug: string;
+  description: string | null;
+}): Promise<Category> {
   const response = await apiFetch("/api/categories", {
     method: "POST",
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify(input),
   });
   const body: { data: Category } = await response.json();
   return body.data;
 }
 
-// Admin only.
-export async function getPendingCategories(signal?: AbortSignal): Promise<Category[]> {
-  const response = await apiFetch("/api/categories/pending", { signal });
-  const body: { data: Category[] } = await response.json();
+// An admin's tag is approved right away; anybody else's waits for an admin.
+export async function suggestTag(input: { name: string; slug: string }): Promise<Tag> {
+  const response = await apiFetch("/api/tags", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const body: { data: Tag } = await response.json();
+  return body.data;
+}
+
+// Admin only: the category or tag suggestions waiting for a decision.
+export async function getPendingSuggestions(
+  kind: SuggestionKind,
+  signal?: AbortSignal,
+): Promise<(Category | Tag)[]> {
+  const response = await apiFetch(`/api/${kind}/pending`, { signal });
+  const body: { data: (Category | Tag)[] } = await response.json();
   return body.data;
 }
 
 // Admin only.
-export async function approveCategory(id: number): Promise<Category> {
-  const response = await apiFetch(`/api/categories/${id}/approve`, { method: "POST" });
-  const body: { data: Category } = await response.json();
-  return body.data;
+export async function approveSuggestion(kind: SuggestionKind, id: number): Promise<void> {
+  await apiFetch(`/api/${kind}/${id}/approve`, { method: "POST" });
 }
 
 // Admin only. The suggestion is deleted.
-export async function rejectCategory(id: number): Promise<void> {
-  await apiFetch(`/api/categories/${id}`, { method: "DELETE" });
+export async function rejectSuggestion(kind: SuggestionKind, id: number): Promise<void> {
+  await apiFetch(`/api/${kind}/${id}`, { method: "DELETE" });
 }
 
+// Approved tags only.
 export async function getTags(search = "", signal?: AbortSignal): Promise<Tag[]> {
   const query = search ? `?${new URLSearchParams({ search })}` : "";
   const response = await apiFetch(`/api/tags${query}`, { signal });

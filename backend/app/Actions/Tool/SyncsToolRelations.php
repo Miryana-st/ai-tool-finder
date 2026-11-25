@@ -2,9 +2,7 @@
 
 namespace App\Actions\Tool;
 
-use App\Models\Tool\Tag;
 use App\Models\Tool\Tool;
-use Illuminate\Support\Str;
 
 /**
  * Shared steps of CreateTool and UpdateTool. Both run inside a transaction.
@@ -31,8 +29,8 @@ trait SyncsToolRelations
     }
 
     /**
-     * Replace the tool's categories, company roles and tags with the given ones.
-     * Tags are matched by slug, so "AI" and "ai" are the same tag; missing tags are created.
+     * Replace the tool's categories, company roles and tags with the given ids.
+     * All of them exist already: new tags are suggested separately, not here.
      *
      * @param  array<string, mixed>  $data
      */
@@ -40,12 +38,6 @@ trait SyncsToolRelations
     {
         $tool->categories()->sync($data['categories']);
         $tool->companyRoles()->sync($data['company_roles']);
-
-        $tagIds = collect($data['tags'] ?? [])
-            ->map(fn (string $name) => Tag::firstOrCreate(['slug' => Str::slug($name)], ['name' => $name])->id)
-            ->unique()
-            ->all();
-
-        $tool->tags()->sync($tagIds);
+        $tool->tags()->sync($data['tags'] ?? []);
     }
 }

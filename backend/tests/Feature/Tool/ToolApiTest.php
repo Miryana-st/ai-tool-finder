@@ -34,7 +34,7 @@ class ToolApiTest extends TestCase
             'examples' => 'See [the docs](https://docs.claude.com).',
             'company_roles' => [CompanyRole::where('slug', 'backend')->value('id')],
             'categories' => [Category::factory()->create()->id],
-            'tags' => ['LLM', 'Chat'],
+            'tags' => Tag::whereIn('slug', ['openai', 'api'])->pluck('id')->all(),
         ], $overrides);
     }
 
@@ -58,7 +58,7 @@ class ToolApiTest extends TestCase
         $this->assertTrue($tool->user->is($user));
         $this->assertDatabaseHas('category_tool', ['tool_id' => $tool->id, 'category_id' => $payload['categories'][0]]);
         $this->assertDatabaseHas('company_role_tool', ['tool_id' => $tool->id, 'company_role_id' => $payload['company_roles'][0]]);
-        $this->assertEqualsCanonicalizing(['llm', 'chat'], $tool->tags()->pluck('slug')->all());
+        $this->assertEqualsCanonicalizing(['openai', 'api'], $tool->tags()->pluck('slug')->all());
     }
 
     public function test_the_creator_cannot_be_set_from_the_input(): void
@@ -73,19 +73,21 @@ class ToolApiTest extends TestCase
         $this->assertSame($user->id, Tool::findOrFail($response->json('data.id'))->user_id);
     }
 
-    public function test_tags_are_normalized_and_reused(): void
+    public function test_saving_a_tool_never_creates_tags(): void
     {
-        $existing = Tag::factory()->create(['name' => 'AI', 'slug' => 'ai']);
+        $tag = Tag::factory()->create();
+        $count = Tag::count();
 
-        $response = $this->actingAs(User::factory()->create())
-            ->postJson('/api/tools', $this->payload(['tags' => [' ai ', 'AI', '', '  ', 'Code Review']]))
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/tools', $this->payload(['tags' => [$tag->id, $tag->id]]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tags.0');
+
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/tools', $this->payload(['tags' => [$tag->id]]))
             ->assertCreated();
 
-        $tool = Tool::findOrFail($response->json('data.id'));
-
-        $this->assertEqualsCanonicalizing(['ai', 'code-review'], $tool->tags()->pluck('slug')->all());
-        $this->assertTrue($tool->tags()->where('slug', 'ai')->sole()->is($existing));
-        $this->assertSame(2, Tag::count());
+        $this->assertSame($count, Tag::count());
     }
 
     public function test_tool_is_shown_by_its_slug(): void
@@ -115,7 +117,8 @@ class ToolApiTest extends TestCase
         $tool->tags()->attach($oldTag);
         $tool->companyRoles()->attach(CompanyRole::where('slug', 'qa')->value('id'));
 
-        $payload = $this->payload(['name' => 'New Name', 'tags' => ['Fresh']]);
+        $fresh = Tag::factory()->create(['slug' => 'fresh']);
+        $payload = $this->payload(['name' => 'New Name', 'tags' => [$fresh->id]]);
         unset($payload['examples']);
 
         $this->actingAs($user)

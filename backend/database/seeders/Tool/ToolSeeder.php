@@ -7,7 +7,6 @@ use App\Models\Tool\Tag;
 use App\Models\User\CompanyRole;
 use App\Models\User\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -19,15 +18,16 @@ use Illuminate\Support\Str;
 class ToolSeeder extends Seeder
 {
     /**
+     * Sample tags on top of the base tags that a migration creates
+     * (add_approval_and_base_tags), e.g. `api`, `ide`, `openai`.
+     *
      * @var array<string, string>
      */
-    private const array TAGS = [
+    private const array EXTRA_TAGS = [
         'chat' => 'Чат',
         'code-completion' => 'Довършване на код',
-        'ide' => 'IDE',
         'image-generation' => 'Генериране на изображения',
         'search' => 'Търсене',
-        'api' => 'API',
     ];
 
     /**
@@ -42,7 +42,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Описвате задачата в чата и уточнявате резултата с допълнителни въпроси.',
             'examples' => 'Чернова на имейл до клиент; обобщение на дълга спецификация; идеи за тестови сценарии.',
             'categories' => ['content'],
-            'tags' => ['chat', 'api'],
+            'tags' => ['chat', 'api', 'openai', 'saas'],
             'company_roles' => ['owner', 'pm', 'qa', 'backend', 'frontend'],
         ],
         [
@@ -53,7 +53,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Качвате документи или код и задавате въпроси; за програмиране се ползва и Claude Code в терминала.',
             'examples' => 'Преглед на pull request; обяснение на непознат код; анализ на договор или документация.',
             'categories' => ['coding', 'content'],
-            'tags' => ['chat', 'api'],
+            'tags' => ['chat', 'api', 'anthropic', 'cli'],
             'company_roles' => ['owner', 'pm', 'backend', 'frontend', 'qa'],
         ],
         [
@@ -64,7 +64,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Инсталирате разширението за редактора и приемате предложенията с Tab.',
             'examples' => "- Довършване на функция по коментар\n- Генериране на unit тестове\n- Писане на SQL заявка\n\nОще примери: [GitHub Copilot tutorials](https://docs.github.com/en/copilot/tutorials)",
             'categories' => ['coding'],
-            'tags' => ['code-completion', 'ide'],
+            'tags' => ['code-completion', 'ide', 'github', 'vscode'],
             'company_roles' => ['backend', 'frontend'],
         ],
         [
@@ -75,7 +75,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Отваряте проекта в Cursor и описвате промяната в чата на агента.',
             'examples' => 'Преименуване на клас в целия проект; добавяне на нов API endpoint по описание.',
             'categories' => ['coding'],
-            'tags' => ['code-completion', 'ide', 'chat'],
+            'tags' => ['code-completion', 'chat', 'paid'],
             'company_roles' => ['backend', 'frontend'],
         ],
         [
@@ -86,7 +86,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Пишете описание (prompt) на изображението и избирате от вариантите.',
             'examples' => 'Moodboard за нов продукт; илюстрации за презентация; концепции за лого.',
             'categories' => ['design'],
-            'tags' => ['image-generation'],
+            'tags' => ['image-generation', 'paid'],
             'company_roles' => ['designer'],
         ],
         [
@@ -97,7 +97,7 @@ class ToolSeeder extends Seeder
             'how_to_use' => 'Задавате въпрос и проверявате отговора чрез посочените източници.',
             'examples' => 'Сравнение на конкурентни продукти; проучване на нова библиотека преди избор.',
             'categories' => ['content'],
-            'tags' => ['search', 'chat'],
+            'tags' => ['search', 'chat', 'free'],
             'company_roles' => ['owner', 'pm', 'designer', 'qa'],
         ],
     ];
@@ -108,9 +108,10 @@ class ToolSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            // The base categories come from a migration (add_base_categories).
+            // The base categories and tags come from migrations.
             $categoryIds = Category::query()->pluck('id', 'slug');
-            $tagIds = $this->createNamed(Tag::class, self::TAGS);
+            $this->createApprovedTags(self::EXTRA_TAGS);
+            $tagIds = Tag::query()->pluck('id', 'slug');
             $companyRoleIds = CompanyRole::query()->pluck('id', 'slug');
             $creator = User::query()->where('system_role', 'admin')->firstOrFail();
 
@@ -133,16 +134,16 @@ class ToolSeeder extends Seeder
     }
 
     /**
-     * Create the given slug => name records and return their ids keyed by slug.
+     * Create the given slug => name tags, already approved.
      *
-     * @param  class-string<Tag>  $model
-     * @param  array<string, string>  $records
-     * @return Collection<string, int>
+     * @param  array<string, string>  $tags
      */
-    private function createNamed(string $model, array $records): Collection
+    private function createApprovedTags(array $tags): void
     {
-        return collect($records)->map(
-            fn (string $name, string $slug) => $model::query()->create(['slug' => $slug, 'name' => $name])->id,
-        );
+        foreach ($tags as $slug => $name) {
+            $tag = new Tag(['slug' => $slug, 'name' => $name]);
+            $tag->approved_at = now();
+            $tag->save();
+        }
     }
 }

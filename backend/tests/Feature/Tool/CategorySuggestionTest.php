@@ -21,10 +21,10 @@ class CategorySuggestionTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->postJson('/api/categories', ['name' => 'Глас и видео', 'description' => 'Транскрипция, TTS, монтаж'])
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video', 'description' => 'Транскрипция, TTS, монтаж'])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Глас и видео')
-            ->assertJsonPath('data.slug', 'glas-i-video')
+            ->assertJsonPath('data.slug', 'voice-video')
             ->assertJsonPath('data.description', 'Транскрипция, TTS, монтаж')
             ->assertJsonPath('data.is_approved', false);
 
@@ -44,7 +44,7 @@ class CategorySuggestionTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->postJson('/api/categories', ['name' => 'Глас и видео'])
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video'])
             ->assertCreated()
             ->assertJsonPath('data.is_approved', true);
 
@@ -56,12 +56,12 @@ class CategorySuggestionTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->postJson('/api/categories', ['name' => 'Без описание'])
+            ->postJson('/api/categories', ['name' => 'Без описание', 'slug' => 'no-description'])
             ->assertCreated()
             ->assertJsonPath('data.description', null);
 
         $this->actingAs($user)
-            ->postJson('/api/categories', ['name' => 'Дълго описание', 'description' => str_repeat('a', 501)])
+            ->postJson('/api/categories', ['name' => 'Дълго описание', 'slug' => 'long', 'description' => str_repeat('a', 501)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('description');
     }
@@ -71,30 +71,55 @@ class CategorySuggestionTest extends TestCase
         Category::factory()->pending()->create(['name' => 'Глас и видео']);
 
         $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('name');
+    }
+
+    public function test_the_slug_is_required(): void
+    {
+        $this->actingAs(User::factory()->create())
             ->postJson('/api/categories', ['name' => 'Глас и видео'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('name');
-    }
-
-    public function test_the_name_needs_a_letter_or_number_for_its_slug(): void
-    {
-        $this->actingAs(User::factory()->create())
-            ->postJson('/api/categories', ['name' => '!!!'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('name');
-
-        $this->assertDatabaseMissing('categories', ['slug' => '']);
-    }
-
-    public function test_a_name_with_the_same_slug_as_an_existing_one_is_rejected(): void
-    {
-        // A different name ("-" instead of spaces), but the same slug.
-        Category::factory()->create(['name' => 'Глас и видео', 'slug' => 'glas-i-video']);
+            ->assertJsonValidationErrors('slug');
 
         $this->actingAs(User::factory()->create())
-            ->postJson('/api/categories', ['name' => 'Глас-и-видео'])
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => ''])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('name');
+            ->assertJsonValidationErrors('slug');
+
+        $this->assertDatabaseMissing('categories', ['name' => 'Глас и видео']);
+    }
+
+    public function test_the_slug_format_is_validated(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (['Voice', 'voice video', 'voice--video', '-voice', 'voice-', 'глас', 'voice_video', str_repeat('a', 51)] as $slug) {
+            $this->actingAs($user)
+                ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => $slug])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('slug');
+        }
+
+        $this->actingAs($user)
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video-2'])
+            ->assertCreated();
+    }
+
+    public function test_the_slug_must_not_be_taken(): void
+    {
+        Category::factory()->pending()->create(['slug' => 'voice-video']);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('slug');
+
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/categories', ['name' => 'Код', 'slug' => 'coding'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('slug');
     }
 
     public function test_admin_lists_pending_suggestions_with_who_suggested_them(): void
@@ -139,7 +164,7 @@ class CategorySuggestionTest extends TestCase
 
         // The name is free to be suggested again.
         $this->actingAs(User::factory()->create())
-            ->postJson('/api/categories', ['name' => 'Глас и видео'])
+            ->postJson('/api/categories', ['name' => 'Глас и видео', 'slug' => 'voice-video'])
             ->assertCreated();
     }
 

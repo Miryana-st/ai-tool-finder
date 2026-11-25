@@ -8,6 +8,7 @@ import {
   ApiError,
   type Category,
   type CompanyRole,
+  type Tag,
   type Tool,
   type ToolImage,
   type ToolInput,
@@ -45,7 +46,7 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
   const [categoryIds, setCategoryIds] = useState<number[]>(
     tool?.categories.map((category) => category.id) ?? [],
   );
-  const [tags, setTags] = useState<string[]>(tool?.tags.map((tag) => tag.name) ?? []);
+  const [tags, setTags] = useState<Tag[]>(tool?.tags ?? []);
   const [images, setImages] = useState<ToolImage[]>(tool?.images ?? []);
   const [files, setFiles] = useState<File[]>([]);
 
@@ -95,7 +96,7 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
       examples: fields.examples.trim() === "" ? null : fields.examples,
       company_roles: companyRoleIds,
       categories: categoryIds,
-      tags,
+      tags: tags.map((tag) => tag.id),
     };
 
     let saved: Tool;
