@@ -4,8 +4,12 @@ export type User = {
   id: number;
   name: string;
   email: string;
-  role: string;
-  role_label: string;
+  // Rights in the application: "user" or "admin".
+  system_role: "user" | "admin";
+  system_role_label: string;
+  // Position in the company (backend, qa, ...); admins can add new ones.
+  company_role: string;
+  company_role_label: string;
 };
 
 // A null href marks a placeholder that is not wired up yet.

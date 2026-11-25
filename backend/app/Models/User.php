@@ -3,20 +3,34 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Enums\Role;
+use App\Enums\SystemRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role'])]
+/**
+ * `system_role` is deliberately not fillable: it can only be changed on purpose
+ * (see App\Actions\Users\UpdateUserSystemRole), never by mass assignment.
+ */
+#[Fillable(['name', 'email', 'password', 'company_role_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'system_role' => 'user',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -28,25 +42,43 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => Role::class,
+            'system_role' => SystemRole::class,
         ];
     }
 
     /**
-     * Determine if the user has the given role.
+     * Get the user's position in the company.
+     *
+     * @return BelongsTo<CompanyRole, $this>
      */
-    public function hasRole(Role $role): bool
+    public function companyRole(): BelongsTo
     {
-        return $this->role === $role;
+        return $this->belongsTo(CompanyRole::class);
     }
 
     /**
-     * Determine if the user has any of the given roles.
-     *
-     * @param  array<int, Role>  $roles
+     * Determine if the user is an admin.
      */
-    public function hasAnyRole(array $roles): bool
+    public function isAdmin(): bool
     {
-        return in_array($this->role, $roles, true);
+        return $this->system_role === SystemRole::Admin;
+    }
+
+    /**
+     * Determine if the user has the company role with the given slug.
+     */
+    public function hasCompanyRole(string $slug): bool
+    {
+        return $this->companyRole?->slug === $slug;
+    }
+
+    /**
+     * Determine if the user has any of the company roles with the given slugs.
+     *
+     * @param  array<int, string>  $slugs
+     */
+    public function hasAnyCompanyRole(array $slugs): bool
+    {
+        return in_array($this->companyRole?->slug, $slugs, true);
     }
 }

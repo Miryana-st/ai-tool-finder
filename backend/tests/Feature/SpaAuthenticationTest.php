@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
@@ -51,7 +50,7 @@ class SpaAuthenticationTest extends TestCase
 
     public function test_login_returns_json_and_user_endpoint_returns_authenticated_user(): void
     {
-        $user = User::factory()->role(Role::Designer)->create([
+        $user = User::factory()->companyRole('designer')->create([
             'email' => 'designer@ai-finder.test',
         ]);
 
@@ -73,8 +72,10 @@ class SpaAuthenticationTest extends TestCase
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => 'designer@ai-finder.test',
-                    'role' => 'designer',
-                    'role_label' => 'Дизайнер',
+                    'system_role' => 'user',
+                    'system_role_label' => 'Потребител',
+                    'company_role' => 'designer',
+                    'company_role_label' => 'Дизайнер',
                 ],
             ]);
     }

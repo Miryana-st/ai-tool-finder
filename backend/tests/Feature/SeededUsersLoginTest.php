@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role;
+use App\Enums\SystemRole;
+use App\Models\CompanyRole;
 use App\Models\User;
+use App\Services\DashboardMenu;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -30,30 +32,45 @@ class SeededUsersLoginTest extends TestCase
         ]);
     }
 
-    public function test_seeder_creates_exactly_one_user_for_each_of_the_six_roles(): void
+    /**
+     * The slugs of the base company roles created by the company roles migration.
+     *
+     * @var list<string>
+     */
+    private const array BASE_COMPANY_ROLES = ['owner', 'backend', 'frontend', 'pm', 'qa', 'designer'];
+
+    public function test_seeder_creates_exactly_one_user_for_each_of_the_six_company_roles(): void
     {
-        $this->assertCount(6, Role::cases());
+        $this->assertSame(6, User::count());
+        $this->assertEqualsCanonicalizing(self::BASE_COMPANY_ROLES, CompanyRole::pluck('slug')->all());
 
-        $seededRoles = User::pluck('role')->map(fn (Role $role) => $role->value)->sort()->values()->all();
-        $expectedRoles = collect(Role::cases())->map(fn (Role $role) => $role->value)->sort()->values()->all();
+        $seededRoles = User::with('companyRole')->get()->pluck('companyRole.slug')->all();
 
-        $this->assertSame($expectedRoles, $seededRoles);
+        $this->assertEqualsCanonicalizing(self::BASE_COMPANY_ROLES, $seededRoles);
+    }
+
+    public function test_owner_is_the_only_seeded_admin(): void
+    {
+        $admins = User::where('system_role', SystemRole::Admin)->pluck('email')->all();
+
+        $this->assertSame(['owner@ai-finder.test'], $admins);
     }
 
     /**
-     * @return array<string, array{Role}>
+     * @return array<string, array{string}>
      */
-    public static function roles(): array
+    public static function companyRoles(): array
     {
-        return collect(Role::cases())
-            ->mapWithKeys(fn (Role $role) => [$role->value => [$role]])
+        return collect(self::BASE_COMPANY_ROLES)
+            ->mapWithKeys(fn (string $slug) => [$slug => [$slug]])
             ->all();
     }
 
-    #[DataProvider('roles')]
-    public function test_seeded_user_can_log_in_see_their_role_and_log_out(Role $role): void
+    #[DataProvider('companyRoles')]
+    public function test_seeded_user_can_log_in_see_their_roles_and_log_out(string $slug): void
     {
-        $user = User::where('email', "{$role->value}@ai-finder.test")->firstOrFail();
+        $companyRole = CompanyRole::where('slug', $slug)->firstOrFail();
+        $user = User::where('email', "{$slug}@ai-finder.test")->firstOrFail();
 
         $this->postJson('/api/login', [
             'email' => $user->email,
@@ -66,14 +83,15 @@ class SeededUsersLoginTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.id', $user->id)
             ->assertJsonPath('data.name', $user->name)
-            ->assertJsonPath('data.role', $role->value)
-            ->assertJsonPath('data.role_label', $role->label());
+            ->assertJsonPath('data.system_role', $user->system_role->value)
+            ->assertJsonPath('data.company_role', $companyRole->slug)
+            ->assertJsonPath('data.company_role_label', $companyRole->name);
 
         $this->getJson('/api/dashboard')
             ->assertOk()
             ->assertJsonPath('data.user.name', $user->name)
-            ->assertJsonPath('data.user.role', $role->value)
-            ->assertJsonPath('data.menu', $role->menu());
+            ->assertJsonPath('data.user.company_role', $companyRole->slug)
+            ->assertJsonPath('data.menu', app(DashboardMenu::class)->for($user));
 
         $this->postJson('/api/logout')->assertNoContent();
 
@@ -100,12 +118,12 @@ class SeededUsersLoginTest extends TestCase
         $this->getJson('/api/user')->assertUnauthorized();
     }
 
-    public function test_each_role_gets_a_different_menu(): void
+    public function test_each_seeded_user_gets_a_different_menu(): void
     {
-        $menus = collect(Role::cases())
-            ->map(fn (Role $role) => array_column($role->menu(), 'key'))
+        $menus = User::with('companyRole')->get()
+            ->map(fn (User $user) => array_column(app(DashboardMenu::class)->for($user), 'key'))
             ->map(fn (array $keys) => implode(',', $keys));
 
-        $this->assertSame($menus->count(), $menus->unique()->count(), 'Two roles share the same dashboard menu.');
+        $this->assertSame($menus->count(), $menus->unique()->count(), 'Two seeded users share the same dashboard menu.');
     }
 }
