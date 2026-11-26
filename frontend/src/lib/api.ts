@@ -12,13 +12,6 @@ export type User = {
   company_role_label: string;
 };
 
-// A null href marks a placeholder that is not wired up yet.
-export type MenuItem = {
-  key: string;
-  label: string;
-  href: string | null;
-};
-
 // Approved categories with the most tools (deleted tools are not counted).
 export type PopularCategory = {
   id: number;
@@ -38,7 +31,6 @@ export type DashboardStats = {
 
 export type Dashboard = {
   user: User;
-  menu: MenuItem[];
   stats: DashboardStats;
 };
 
@@ -57,6 +49,8 @@ export type Category = {
   slug: string;
   description: string | null;
   is_approved: boolean;
+  // Tools with it (deleted tools are not counted); only in the lists of approved ones.
+  tools_count?: number;
   // Only in the admin list of pending suggestions; null if the user was deleted.
   suggested_by?: { id: number; name: string } | null;
   created_at: string;
@@ -68,6 +62,8 @@ export type Tag = {
   name: string;
   slug: string;
   is_approved: boolean;
+  // Tools with it (deleted tools are not counted); only in the lists of approved ones.
+  tools_count?: number;
   // Only in the admin list of pending suggestions; null if the user was deleted.
   suggested_by?: { id: number; name: string } | null;
   created_at: string;
@@ -128,6 +124,8 @@ export type ToolFilters = {
   tags?: string[];
   // 1: only the signed-in user's favorite tools.
   favorites?: 1;
+  // 1: only the tools the signed-in user added.
+  mine?: 1;
   page?: number;
 };
 
@@ -276,7 +274,7 @@ export async function getCompanyRoles(signal?: AbortSignal): Promise<CompanyRole
   return body.data;
 }
 
-// Admin only. The slug cannot change later: dashboard menus are keyed by it.
+// Admin only. The slug cannot change later: users and tool filters refer to the role by it.
 export async function createCompanyRole(input: { slug: string; name: string }): Promise<CompanyRole> {
   const response = await apiFetch("/api/company-roles", {
     method: "POST",
@@ -301,7 +299,7 @@ export async function deleteCompanyRole(id: number): Promise<void> {
   await apiFetch(`/api/company-roles/${id}`, { method: "DELETE" });
 }
 
-// Admin only. 20 users per page, ordered by name.
+// Admin only. 10 users per page, ordered by name.
 export async function getUsers(
   filters: UserFilters,
   signal?: AbortSignal,
@@ -342,6 +340,14 @@ export async function updatePassword(input: {
   password_confirmation: string;
 }): Promise<void> {
   await apiFetch("/api/user/password", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+// The signed-in user's own name and email (Fortify).
+export async function updateProfileInformation(input: { name: string; email: string }): Promise<void> {
+  await apiFetch("/api/user/profile-information", {
     method: "PUT",
     body: JSON.stringify(input),
   });
@@ -404,8 +410,34 @@ export async function approveSuggestion(kind: SuggestionKind, id: number): Promi
   await apiFetch(`/api/${kind}/${id}/approve`, { method: "POST" });
 }
 
-// Admin only. The suggestion is deleted.
+// Admin only. The suggestion is deleted; an approved one is refused (409).
 export async function rejectSuggestion(kind: SuggestionKind, id: number): Promise<void> {
+  await apiFetch(`/api/${kind}/${id}/reject`, { method: "POST" });
+}
+
+// Every approved category or tag with its tools count. The tags list is admin only.
+export async function getApprovedItems(kind: SuggestionKind, signal?: AbortSignal): Promise<(Category | Tag)[]> {
+  const response = await apiFetch(kind === "tags" ? "/api/tags/all" : "/api/categories", { signal });
+  const body: { data: (Category | Tag)[] } = await response.json();
+  return body.data;
+}
+
+// Admin only. The slug stays; `description` is for categories only.
+export async function updateApprovedItem(
+  kind: SuggestionKind,
+  id: number,
+  input: { name: string; description?: string | null },
+): Promise<Category | Tag> {
+  const response = await apiFetch(`/api/${kind}/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  const body: { data: Category | Tag } = await response.json();
+  return body.data;
+}
+
+// Admin only. Deletes a category or tag, approved or not; tools only lose it.
+export async function deleteApprovedItem(kind: SuggestionKind, id: number): Promise<void> {
   await apiFetch(`/api/${kind}/${id}`, { method: "DELETE" });
 }
 

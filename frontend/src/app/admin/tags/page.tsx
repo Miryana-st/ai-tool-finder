@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import RequireAuth from "@/components/RequireAuth";
-import PendingSuggestions from "@/components/admin/PendingSuggestions";
+import TaxonomyManager from "@/components/admin/TaxonomyManager";
 
 export const metadata: Metadata = {
-  title: "Предложени тагове | AI-Finder",
+  title: "Тагове | AI-Finder",
 };
 
 export default function AdminTagsPage() {
   return (
     <RequireAuth>
-      <PendingSuggestions kind="tags" />
+      <TaxonomyManager kind="tags" />
     </RequireAuth>
   );
 }

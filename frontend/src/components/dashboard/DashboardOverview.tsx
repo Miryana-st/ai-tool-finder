@@ -1,15 +1,40 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
-import { useDashboard } from "@/context/DashboardContext";
+import * as api from "@/lib/api";
+import type { Dashboard } from "@/lib/api";
 import DashboardHero from "./DashboardHero";
 import DashboardStatCards from "./DashboardStatCards";
 import PopularCategories from "./PopularCategories";
 
+type DashboardState =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; dashboard: Dashboard };
+
+// The stats are loaded on every visit to the dashboard, so the numbers stay fresh.
 export default function DashboardOverview() {
   const { user } = useAuth();
-  const dashboard = useDashboard();
+  const [dashboard, setDashboard] = useState<DashboardState>({ status: "loading" });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    api
+      .getDashboard(controller.signal)
+      .then((data) => setDashboard({ status: "ready", dashboard: data }))
+      .catch((error: unknown) => {
+        if (api.isAbortError(error)) {
+          return;
+        }
+        console.error("Could not load the dashboard.", error);
+        setDashboard({ status: "error" });
+      });
+
+    return () => controller.abort();
+  }, []);
 
   if (!user) {
     return null;

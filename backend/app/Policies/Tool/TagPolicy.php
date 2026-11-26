@@ -44,4 +44,28 @@ class TagPolicy
     {
         return $user->isAdmin();
     }
+
+    /**
+     * Determine whether the user can see every approved tag with its tools count.
+     */
+    public function viewAll(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can rename the tag.
+     */
+    public function update(User $user, Tag $tag): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can delete the tag, approved or not.
+     */
+    public function delete(User $user, Tag $tag): bool
+    {
+        return $user->isAdmin();
+    }
 }

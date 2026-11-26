@@ -13,8 +13,7 @@ import {
   breadcrumbLinkClassName,
 } from "@/components/ui/breadcrumb";
 import { useBreadcrumbLabels } from "@/context/BreadcrumbContext";
-import { useDashboard } from "@/context/DashboardContext";
-import { HOME_HREF, MAIN_NAV } from "./navigation";
+import { ADMIN_NAV, HOME_HREF, MAIN_NAV } from "./navigation";
 
 // Path segments that are not pages of their own: shown, but not as links.
 const GROUP_LABELS: Record<string, string> = {
@@ -24,6 +23,7 @@ const GROUP_LABELS: Record<string, string> = {
 // Pages that are not in a menu.
 const PAGE_LABELS: Record<string, string> = {
   "/admin/users/new": "Добави потребител",
+  "/categories": "Категории",
 };
 
 // The last segment of these paths, whatever comes before it.
@@ -38,21 +38,13 @@ type Crumb = { href: string; label: string; isLink: boolean };
 export default function AppBreadcrumbs() {
   const pathname = usePathname();
   const pageLabels = useBreadcrumbLabels();
-  const dashboard = useDashboard();
 
   if (pathname === HOME_HREF) {
     return null;
   }
 
   const knownLabels: Record<string, string> = {};
-  if (dashboard.status === "ready") {
-    for (const item of dashboard.dashboard.menu) {
-      if (item.href) {
-        knownLabels[item.href] = item.label;
-      }
-    }
-  }
-  for (const item of MAIN_NAV) {
+  for (const item of [...ADMIN_NAV, ...MAIN_NAV]) {
     if (item.href) {
       knownLabels[item.href] = item.label;
     }
@@ -73,7 +65,7 @@ export default function AppBreadcrumbs() {
   });
 
   return (
-    <Breadcrumb className="mb-6">
+    <Breadcrumb className="mb-6 max-md:hidden">
       <BreadcrumbList>
         <BreadcrumbItem>
           <Link href={HOME_HREF} aria-label="Табло" className={breadcrumbLinkClassName}>

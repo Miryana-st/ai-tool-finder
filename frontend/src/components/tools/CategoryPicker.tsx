@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import NameSlugFields, { canSendNameSlug } from "./NameSlugFields";
 import RequiredMark from "./RequiredMark";
 import {
+  chipClassName,
   fieldErrorClassName,
   formFieldClassName,
   inputClassName,
@@ -94,9 +95,7 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
   const nameError = api.fieldError(errors, "name");
   const descriptionError = api.fieldError(errors, "description");
 
-  const selectedNames = categories
-    .filter((category) => selected.includes(category.id))
-    .map((category) => category.name);
+  const selectedCategories = categories.filter((category) => selected.includes(category.id));
 
   return (
     <fieldset className="flex flex-col gap-2">
@@ -107,34 +106,56 @@ export default function CategoryPicker({ categories, selected, onToggle, onCreat
       {categories.length === 0 ? (
         <p className={`text-sm ${mutedTextClassName}`}>Все още няма категории.</p>
       ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-invalid={Boolean(error)}
-            className={cn(formFieldClassName, "flex h-11 items-center justify-between gap-2 text-left")}
-          >
-            <span className={cn("truncate", selectedNames.length === 0 && "text-muted-foreground")}>
-              {selectedNames.length > 0 ? selectedNames.join(", ") : "Избери категория…"}
-            </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-h-72">
-            {categories.map((category) => (
-              <DropdownMenuCheckboxItem
-                key={category.id}
-                checked={selected.includes(category.id)}
-                onCheckedChange={() => onToggle(category.id)}
-                className="py-1.5"
-              >
-                <span className="flex flex-col">
+        <>
+          {selectedCategories.length > 0 && (
+            <ul aria-label="Избрани категории" className="flex flex-wrap items-center gap-2">
+              {selectedCategories.map((category) => (
+                <li key={category.id} className={chipClassName}>
                   {category.name}
-                  {category.description && (
-                    <span className="text-xs text-muted-foreground">{category.description}</span>
-                  )}
-                </span>
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  <button
+                    type="button"
+                    onClick={() => onToggle(category.id)}
+                    aria-label={`Премахни категория ${category.name}`}
+                    className="text-zinc-500 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* The menu closes after each pick; another click opens it for the next category. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-invalid={Boolean(error)}
+              className={cn(formFieldClassName, "flex h-11 items-center justify-between gap-2 text-left")}
+            >
+              <span className="truncate text-muted-foreground">
+                {selectedCategories.length > 0 ? "Добави категория" : "Избери категория…"}
+              </span>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="max-h-72">
+              {categories.map((category) => (
+                <DropdownMenuCheckboxItem
+                  key={category.id}
+                  checked={selected.includes(category.id)}
+                  onCheckedChange={() => onToggle(category.id)}
+                  closeOnClick
+                  className="py-1.5"
+                >
+                  <span className="flex flex-col">
+                    {category.name}
+                    {category.description && (
+                      <span className="text-xs text-muted-foreground">{category.description}</span>
+                    )}
+                  </span>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       )}
 
       {error && <span className={fieldErrorClassName}>{error}</span>}

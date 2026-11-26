@@ -20,6 +20,8 @@ type AuthContextValue = {
   status: AuthStatus;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  // Loads the user again, e.g. after they changed their name or email.
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -66,9 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   }, [applyUser, router]);
 
+  const refreshUser = useCallback(async () => {
+    applyUser(await api.getUser());
+  }, [applyUser]);
+
   const value = useMemo(
-    () => ({ user, status, login, logout }),
-    [user, status, login, logout],
+    () => ({ user, status, login, logout, refreshUser }),
+    [user, status, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

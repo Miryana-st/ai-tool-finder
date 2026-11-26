@@ -16,7 +16,7 @@ class IndexToolRequest extends FormRequest
      *
      * `company_role`, `category` and each of `tags` are slugs; a tool must have
      * all of the given tags. `favorites` keeps only the signed-in user's
-     * favorite tools.
+     * favorite tools and `mine` only the tools the signed-in user added.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -29,6 +29,7 @@ class IndexToolRequest extends FormRequest
             'tags' => ['nullable', 'array', 'max:'.self::MAX_TAGS],
             'tags.*' => ['required', 'string', 'max:255'],
             'favorites' => ['nullable', 'boolean'],
+            'mine' => ['nullable', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
     }

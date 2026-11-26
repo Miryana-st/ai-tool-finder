@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import AdminPagination from "@/components/admin/AdminPagination";
 import * as api from "@/lib/api";
 import { ApiError, type CompanyRole, type Paginated, type User } from "@/lib/api";
 import {
@@ -24,7 +25,7 @@ type Message = { type: "success" | "error"; text: string };
 
 // Admin list of users. The filters live in the URL query, like the tool list.
 export default function UserList() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -157,8 +158,9 @@ export default function UserList() {
     try {
       const updated = await api.updateUserSystemRole(user.id, makeAdmin ? "admin" : "user");
 
-      // This page is for admins only; the dashboard loads the menu for the new role.
+      // This page is for admins only. Loading the user again also hides the admin menu.
       if (isSelf && !makeAdmin) {
+        await refreshUser();
         router.push("/dashboard");
         return;
       }
@@ -211,6 +213,30 @@ export default function UserList() {
       setBusyId(null);
     }
   };
+
+  const renderActions = (user: User) => (
+    <>
+      <button
+        type="button"
+        onClick={() => void toggleAdmin(user)}
+        disabled={busyId !== null}
+        className={secondaryButtonClassName}
+      >
+        {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
+      </button>
+      {/* Admins cannot delete their own account (the backend refuses too). */}
+      {user.id !== currentUser?.id && (
+        <button
+          type="button"
+          onClick={() => void deleteUser(user)}
+          disabled={busyId !== null}
+          className={dangerButtonClassName}
+        >
+          Изтрий
+        </button>
+      )}
+    </>
+  );
 
   const isLoading = users === null || users.query !== query;
   const hasFilters = Boolean(urlSearch || systemRole || companyRole);
@@ -295,15 +321,42 @@ export default function UserList() {
         </p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+          {/* Phones get a card per user; the table needs more width. */}
+          <ul className="flex flex-col gap-3 md:hidden">
+            {users.result.data.map((user) => (
+              <li
+                key={user.id}
+                className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <p className="font-semibold">
+                    {user.name}
+                    {user.id === currentUser?.id && (
+                      <span className={`ml-2 text-xs font-normal ${mutedTextClassName}`}>(ти)</span>
+                    )}
+                  </p>
+                  <p className={`truncate text-sm ${mutedTextClassName}`}>{user.email}</p>
+                </div>
+                <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-sm">
+                  <dt className="font-medium text-violet-900 dark:text-violet-200">Роля във фирмата</dt>
+                  <dd>{user.company_role_label}</dd>
+                  <dt className="font-medium text-violet-900 dark:text-violet-200">Системна роля</dt>
+                  <dd>{user.system_role_label}</dd>
+                </dl>
+                <div className="flex flex-wrap gap-2">{renderActions(user)}</div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden overflow-x-auto rounded-lg border border-zinc-200 shadow-sm md:block dark:border-zinc-800">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+              <thead className="border-b-2 border-violet-200 bg-violet-50 text-xs tracking-wide text-violet-900 uppercase dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">Име</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Email</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Роля във фирмата</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Системна роля</th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  <th scope="col" className="px-4 py-3 font-semibold">Име</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Email</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Роля във фирмата</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Системна роля</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">
                     <span className="sr-only">Действие</span>
                   </th>
                 </tr>
@@ -321,27 +374,7 @@ export default function UserList() {
                     <td className="px-4 py-3">{user.company_role_label}</td>
                     <td className="px-4 py-3">{user.system_role_label}</td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void toggleAdmin(user)}
-                          disabled={busyId !== null}
-                          className={secondaryButtonClassName}
-                        >
-                          {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
-                        </button>
-                        {/* Admins cannot delete their own account (the backend refuses too). */}
-                        {user.id !== currentUser?.id && (
-                          <button
-                            type="button"
-                            onClick={() => void deleteUser(user)}
-                            disabled={busyId !== null}
-                            className={dangerButtonClassName}
-                          >
-                            Изтрий
-                          </button>
-                        )}
-                      </div>
+                      <div className="flex justify-end gap-2">{renderActions(user)}</div>
                     </td>
                   </tr>
                 ))}
@@ -349,10 +382,11 @@ export default function UserList() {
             </table>
           </div>
 
-          <Pagination
+          <AdminPagination
             page={users.result.meta.current_page}
             lastPage={users.result.meta.last_page}
             total={users.result.meta.total}
+            itemsLabel={users.result.meta.total === 1 ? "потребител" : "потребителя"}
             onChange={(next) => updateQuery({ page: next > 1 ? String(next) : null })}
           />
         </>
@@ -384,41 +418,5 @@ function FilterSelect({
         ))}
       </select>
     </label>
-  );
-}
-
-function Pagination({
-  page,
-  lastPage,
-  total,
-  onChange,
-}: {
-  page: number;
-  lastPage: number;
-  total: number;
-  onChange: (page: number) => void;
-}) {
-  return (
-    <nav aria-label="Страници" className="flex items-center justify-between gap-4 text-sm">
-      <button
-        type="button"
-        onClick={() => onChange(page - 1)}
-        disabled={page <= 1}
-        className={secondaryButtonClassName}
-      >
-        ← Предишна
-      </button>
-      <span className={mutedTextClassName}>
-        Страница {page} от {lastPage} · {total} потребителя
-      </span>
-      <button
-        type="button"
-        onClick={() => onChange(page + 1)}
-        disabled={page >= lastPage}
-        className={secondaryButtonClassName}
-      >
-        Следваща →
-      </button>
-    </nav>
   );
 }

@@ -57,11 +57,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');
     Route::get('/categories/pending', [CategoryController::class, 'pending'])->name('api.categories.pending');
     Route::post('/categories/{category}/approve', [CategoryController::class, 'approve'])->name('api.categories.approve');
-    Route::delete('/categories/{category}', [CategoryController::class, 'reject'])->name('api.categories.reject');
+    Route::post('/categories/{category}/reject', [CategoryController::class, 'reject'])->name('api.categories.reject');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('api.categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
 
     Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
     Route::post('/tags', [TagController::class, 'store'])->name('api.tags.store');
+    Route::get('/tags/all', [TagController::class, 'all'])->name('api.tags.all');
     Route::get('/tags/pending', [TagController::class, 'pending'])->name('api.tags.pending');
     Route::post('/tags/{tag}/approve', [TagController::class, 'approve'])->name('api.tags.approve');
-    Route::delete('/tags/{tag}', [TagController::class, 'reject'])->name('api.tags.reject');
+    Route::post('/tags/{tag}/reject', [TagController::class, 'reject'])->name('api.tags.reject');
+    Route::put('/tags/{tag}', [TagController::class, 'update'])->name('api.tags.update');
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('api.tags.destroy');
 });

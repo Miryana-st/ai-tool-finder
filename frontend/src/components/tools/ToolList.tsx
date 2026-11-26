@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronDown, ChevronLeft, ChevronRight, Heart, LayoutGrid, Plus, RotateCcw, Search, X } from "lucide-react";
+import { ChevronDown, Heart, LayoutGrid, Plus, RotateCcw, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import Pagination from "@/components/Pagination";
 import * as api from "@/lib/api";
 import type { Category, CompanyRole, Paginated, Tag, Tool } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -313,7 +314,7 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
           <Pagination
             page={tools.result.meta.current_page}
             lastPage={tools.result.meta.last_page}
-            total={tools.result.meta.total}
+            summary={`${tools.result.meta.total} инструмента`}
             onChange={(next) => updateQuery({ page: next > 1 ? String(next) : null })}
           />
         </>
@@ -355,90 +356,5 @@ function FilterSelect({
         aria-hidden="true"
       />
     </label>
-  );
-}
-
-// The page numbers to show: the first, the last and the ones next to the current page.
-function visiblePages(page: number, lastPage: number): (number | "gap")[] {
-  const pages: (number | "gap")[] = [];
-
-  for (let number = 1; number <= lastPage; number++) {
-    if (number === 1 || number === lastPage || Math.abs(number - page) <= 1) {
-      pages.push(number);
-    } else if (pages[pages.length - 1] !== "gap") {
-      pages.push("gap");
-    }
-  }
-
-  return pages;
-}
-
-function Pagination({
-  page,
-  lastPage,
-  total,
-  onChange,
-}: {
-  page: number;
-  lastPage: number;
-  total: number;
-  onChange: (page: number) => void;
-}) {
-  const arrowClassName =
-    "flex size-9 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-xs transition-colors hover:border-violet-300 hover:text-violet-700 disabled:pointer-events-none disabled:opacity-40";
-
-  return (
-    <nav aria-label="Страници" className="flex flex-col items-center gap-2">
-      {lastPage > 1 && (
-        <ul className="flex items-center gap-2">
-          <li>
-            <button
-              type="button"
-              onClick={() => onChange(page - 1)}
-              disabled={page <= 1}
-              aria-label="Предишна страница"
-              className={arrowClassName}
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-          </li>
-          {visiblePages(page, lastPage).map((item, index) =>
-            item === "gap" ? (
-              <li key={`gap-${index}`} aria-hidden="true" className="px-1 text-muted-foreground">
-                …
-              </li>
-            ) : (
-              <li key={item}>
-                <button
-                  type="button"
-                  onClick={() => onChange(item)}
-                  aria-current={item === page ? "page" : undefined}
-                  className={cn(
-                    "flex size-9 items-center justify-center rounded-lg text-sm font-semibold transition-colors",
-                    item === page
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
-                      : "border bg-card shadow-xs hover:border-violet-300 hover:text-violet-700",
-                  )}
-                >
-                  {item}
-                </button>
-              </li>
-            ),
-          )}
-          <li>
-            <button
-              type="button"
-              onClick={() => onChange(page + 1)}
-              disabled={page >= lastPage}
-              aria-label="Следваща страница"
-              className={arrowClassName}
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </li>
-        </ul>
-      )}
-      <p className={cn("text-sm", mutedTextClassName)}>{total} инструмента</p>
-    </nav>
   );
 }

@@ -1,39 +1,13 @@
-import {
-  ArrowRight,
-  Bot,
-  ChartColumn,
-  CodeXml,
-  FlaskConical,
-  Folder,
-  Palette,
-  PenLine,
-  Shapes,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { categoryIcon, categoryIconColor } from "@/components/categories/categoryIcons";
 import { Card } from "@/components/ui/card";
 import type { PopularCategory } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// Icons for the base categories (see the backend's base category migrations).
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  coding: CodeXml,
-  design: Palette,
-  data: ChartColumn,
-  automation: Bot,
-  testing: FlaskConical,
-  content: PenLine,
-  other: Shapes,
-};
+const seeAllClassName = "inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline";
 
-const ICON_COLORS = [
-  "text-teal-500",
-  "text-fuchsia-500",
-  "text-blue-500",
-  "text-amber-500",
-  "text-indigo-500",
-];
-
+// The link in the heading opens all tools; the one under the cards opens all categories.
 export default function PopularCategories({ categories }: { categories: PopularCategory[] }) {
   return (
     <section aria-labelledby="popular-categories" className="flex flex-col gap-4">
@@ -41,12 +15,9 @@ export default function PopularCategories({ categories }: { categories: PopularC
         <h2 id="popular-categories" className="text-xl font-bold text-slate-900">
           Популярни категории
         </h2>
-        <Link
-          href="/tools"
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-        >
+        <Link href="/tools" aria-label="Виж всички инструменти" className={seeAllClassName}>
           Виж всички
-          <ArrowRight className="size-4" />
+          <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       </div>
 
@@ -55,7 +26,7 @@ export default function PopularCategories({ categories }: { categories: PopularC
       ) : (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map((category, index) => {
-            const Icon = CATEGORY_ICONS[category.slug] ?? Folder;
+            const Icon = categoryIcon(category.slug);
 
             return (
               <li key={category.id}>
@@ -64,7 +35,7 @@ export default function PopularCategories({ categories }: { categories: PopularC
                   className="group block h-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Card className="h-full items-center gap-2 bg-indigo-50/60 px-3 text-center shadow-sm transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-                    <Icon className={cn("size-8", ICON_COLORS[index % ICON_COLORS.length])} />
+                    <Icon className={cn("size-8", categoryIconColor(index))} />
                     <span className="text-sm font-semibold text-slate-800">{category.name}</span>
                     <span className="text-sm text-muted-foreground tabular-nums">
                       ({category.tools_count})
@@ -76,6 +47,11 @@ export default function PopularCategories({ categories }: { categories: PopularC
           })}
         </ul>
       )}
+
+      <Link href="/categories" aria-label="Виж всички категории" className={cn(seeAllClassName, "self-end")}>
+        Виж всички
+        <ArrowRight className="size-4" aria-hidden="true" />
+      </Link>
     </section>
   );
 }

@@ -33,7 +33,8 @@ class ToolController extends Controller
 
     /**
      * List tools, newest first, filtered by name, company role, category and tag,
-     * and with `favorites` only the signed-in user's favorite tools.
+     * with `favorites` only the signed-in user's favorite tools and with `mine`
+     * only the tools the signed-in user added.
      */
     public function index(IndexToolRequest $request): AnonymousResourceCollection
     {
@@ -44,6 +45,7 @@ class ToolController extends Controller
             ->withFavoriteInfo($user)
             ->filter($request->validated())
             ->when($request->boolean('favorites'), fn ($query) => $query->favoriteOf($user))
+            ->when($request->boolean('mine'), fn ($query) => $query->whereBelongsTo($user))
             ->latest()
             ->latest('id')
             ->paginate(self::PER_PAGE)

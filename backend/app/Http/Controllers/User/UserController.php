@@ -19,7 +19,7 @@ class UserController extends Controller
     /**
      * Number of users per page.
      */
-    private const int PER_PAGE = 20;
+    private const int PER_PAGE = 10;
 
     /**
      * List users by name, filtered by name or email, system role and company role (admins only).

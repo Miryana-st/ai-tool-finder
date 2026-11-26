@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Circle, ShieldCheck } from "lucide-react";
+import { ChevronRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -10,59 +10,39 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
-import { useDashboard } from "@/context/DashboardContext";
-import type { MenuItem } from "@/lib/api";
 import UserAvatar from "./UserAvatar";
 import LogoMark from "./LogoMark";
-import { MAIN_NAV, type NavItem } from "./navigation";
-
-// The tools list is in the main menu, so it is left out of the role menu from the backend.
-const MAIN_NAV_MENU_KEYS = ["tools"];
+import { activeHref, ADMIN_NAV, MAIN_NAV, type NavItem } from "./navigation";
 
 const menuButtonClassName =
   "h-11 gap-3 px-3 text-[15px] data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-md [&_svg]:size-5";
 
-// The most specific href that contains the current page, so /tools/new does not also mark /tools.
-function activeHref(pathname: string, hrefs: string[]): string | null {
-  return (
-    hrefs
-      .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
-      .sort((a, b) => b.length - a.length)[0] ?? null
-  );
-}
-
 export default function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const dashboard = useDashboard();
+  const isAdmin = user?.system_role === "admin";
+  const closeMobileMenu = useCloseMobileMenu();
 
-  const roleItems =
-    dashboard.status === "ready"
-      ? dashboard.dashboard.menu.filter((item) => !MAIN_NAV_MENU_KEYS.includes(item.key))
-      : [];
-
-  const hrefs = [...MAIN_NAV, ...roleItems]
+  const hrefs = [...MAIN_NAV, ...(isAdmin ? ADMIN_NAV : [])]
     .map((item) => item.href)
     .filter((href): href is string => href !== null);
   const current = activeHref(pathname, hrefs);
-  const isAdmin = user?.system_role === "admin";
 
   return (
     <Sidebar>
       <SidebarHeader className="px-4 pt-6 pb-4">
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href="/dashboard" onClick={closeMobileMenu} className="flex items-center gap-3">
           <LogoMark className="size-11 shrink-0" />
           <span className="text-xl leading-tight font-bold">
             AI Tool
@@ -85,43 +65,12 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="mx-4" />
-
-        {dashboard.status === "loading" && (
-          <SidebarGroup>
-            <SidebarMenuSkeleton showIcon />
-            <SidebarMenuSkeleton showIcon />
-          </SidebarGroup>
+        {isAdmin && (
+          <>
+            <SidebarSeparator className="mx-4" />
+            <AdminMenu current={current} />
+          </>
         )}
-
-        {dashboard.status === "error" && (
-          <p role="alert" className="px-4 text-sm text-sidebar-foreground/70">
-            Менюто не можа да се зареди.
-          </p>
-        )}
-
-        {roleItems.length > 0 &&
-          (isAdmin ? (
-            <AdminMenu items={roleItems} current={current} />
-          ) : (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-sidebar-foreground/60">
-                За твоята роля
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-1.5">
-                  {roleItems.map((item) => (
-                    <SidebarMenuItem key={item.key}>
-                      <NavButton
-                        item={{ label: item.label, href: item.href, icon: Circle }}
-                        isActive={item.href !== null && item.href === current}
-                      />
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
       </SidebarContent>
 
       {user && (
@@ -142,8 +91,20 @@ export default function AppSidebar() {
   );
 }
 
+// On a phone the menu is a sheet over the page; picking a link closes it.
+function useCloseMobileMenu(): () => void {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  return () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+}
+
 function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
   const Icon = item.icon;
+  const closeMobileMenu = useCloseMobileMenu();
 
   if (item.href === null) {
     return (
@@ -159,7 +120,7 @@ function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
     <SidebarMenuButton
       isActive={isActive}
       className={menuButtonClassName}
-      render={<Link href={item.href} />}
+      render={<Link href={item.href} onClick={closeMobileMenu} />}
     >
       <Icon />
       <span>{item.label}</span>
@@ -167,9 +128,10 @@ function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
   );
 }
 
-// Admins get the admin menu from the backend, folded under "Админ".
-function AdminMenu({ items, current }: { items: MenuItem[]; current: string | null }) {
-  const hasActiveItem = items.some((item) => item.href !== null && item.href === current);
+// The admin pages, folded under "Админ".
+function AdminMenu({ current }: { current: string | null }) {
+  const closeMobileMenu = useCloseMobileMenu();
+  const hasActiveItem = ADMIN_NAV.some((item) => item.href === current);
 
   return (
     <SidebarGroup>
@@ -184,22 +146,15 @@ function AdminMenu({ items, current }: { items: MenuItem[]; current: string | nu
           </CollapsibleTrigger>
           <CollapsibleContent>
             <SidebarMenuSub className="mt-1">
-              {items.map((item) => (
-                <SidebarMenuSubItem key={item.key}>
-                  {item.href ? (
-                    <SidebarMenuSubButton
-                      isActive={item.href === current}
-                      className="h-9"
-                      render={<Link href={item.href} />}
-                    >
-                      <span>{item.label}</span>
-                    </SidebarMenuSubButton>
-                  ) : (
-                    <SidebarMenuSubButton aria-disabled="true" className="h-9">
-                      <span>{item.label}</span>
-                      <span className="ml-auto text-xs">Скоро</span>
-                    </SidebarMenuSubButton>
-                  )}
+              {ADMIN_NAV.map((item) => (
+                <SidebarMenuSubItem key={item.href}>
+                  <SidebarMenuSubButton
+                    isActive={item.href === current}
+                    className="h-9"
+                    render={<Link href={item.href} onClick={closeMobileMenu} />}
+                  >
+                    <span>{item.label}</span>
+                  </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               ))}
             </SidebarMenuSub>

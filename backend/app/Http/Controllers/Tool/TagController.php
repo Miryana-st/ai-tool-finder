@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tool;
 use App\Actions\Tool\SaveSuggestion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreTagRequest;
+use App\Http\Requests\Tool\UpdateTagRequest;
 use App\Http\Resources\Tool\TagResource;
 use App\Models\Tool\Tag;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +41,39 @@ class TagController extends Controller
             ->get();
 
         return TagResource::collection($tags);
+    }
+
+    /**
+     * List every approved tag by name, each with the number of its tools
+     * (deleted tools are not counted). For the admin tag management page.
+     */
+    public function all(): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAll', Tag::class);
+
+        return TagResource::collection(Tag::approved()->withCount('tools')->orderBy('name')->get());
+    }
+
+    /**
+     * Rename a tag. The slug stays.
+     */
+    public function update(UpdateTagRequest $request, Tag $tag): TagResource
+    {
+        $tag->update($request->validated());
+
+        return new TagResource($tag->loadCount('tools'));
+    }
+
+    /**
+     * Delete a tag, approved or not. Tools keep their other tags.
+     */
+    public function destroy(Tag $tag): Response
+    {
+        Gate::authorize('delete', $tag);
+
+        $tag->delete();
+
+        return response()->noContent();
     }
 
     /**
