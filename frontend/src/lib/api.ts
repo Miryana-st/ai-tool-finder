@@ -124,7 +124,8 @@ export type ToolFilters = {
   search?: string;
   company_role?: string;
   category?: string;
-  tag?: string;
+  // Tag slugs; a tool must have all of them.
+  tags?: string[];
   // 1: only the signed-in user's favorite tools.
   favorites?: 1;
   page?: number;
@@ -425,11 +426,14 @@ export async function getTools(
 }
 
 // "?key=value&…" for the filled-in filters, or "" when there are none.
-function toQuery(filters: Record<string, string | number | undefined>): string {
+// A list becomes `key[]=a&key[]=b`, the array format Laravel reads.
+function toQuery(filters: Record<string, string | number | string[] | undefined>): string {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== "") {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(`${key}[]`, item));
+    } else if (value !== undefined && value !== "") {
       params.set(key, String(value));
     }
   }

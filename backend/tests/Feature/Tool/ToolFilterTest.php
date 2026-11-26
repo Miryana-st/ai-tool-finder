@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tool;
 
+use App\Http\Requests\Tool\IndexToolRequest;
 use App\Models\Tool\Category;
 use App\Models\Tool\Tag;
 use App\Models\Tool\Tool;
@@ -62,7 +63,7 @@ class ToolFilterTest extends TestCase
     /**
      * Get the ids of the tools listed for the given query string.
      *
-     * @param  array<string, string>  $query
+     * @param  array<string, string|list<string>>  $query
      * @return list<int>
      */
     private function listedIds(array $query = []): array
@@ -109,7 +110,34 @@ class ToolFilterTest extends TestCase
 
     public function test_filters_by_tag(): void
     {
-        $this->assertSame([$this->midjourney->id], $this->listedIds(['tag' => 'images']));
+        $this->assertSame([$this->midjourney->id], $this->listedIds(['tags' => ['images']]));
+    }
+
+    public function test_filters_by_several_tags_keeping_tools_that_have_all_of_them(): void
+    {
+        $this->chatGpt->tags()->attach(Tag::factory()->create(['slug' => 'chatbot']));
+
+        $this->assertSame([$this->chatGpt->id], $this->listedIds(['tags' => ['llm', 'chatbot']]));
+        $this->assertSame([$this->chatGpt->id], $this->listedIds(['tags' => ['llm', 'chatbot', 'llm']]));
+        $this->assertSame([], $this->listedIds(['tags' => ['llm', 'images']]));
+    }
+
+    public function test_too_many_tags_are_rejected(): void
+    {
+        $tags = array_map(fn (int $number) => "tag-{$number}", range(1, IndexToolRequest::MAX_TAGS + 1));
+
+        $this->actingAs($this->user)
+            ->getJson('/api/tools?'.http_build_query(['tags' => $tags]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tags');
+    }
+
+    public function test_tags_must_be_a_list(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson('/api/tools?tags=llm')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tags');
     }
 
     public function test_unknown_slug_returns_no_tools(): void
@@ -120,8 +148,8 @@ class ToolFilterTest extends TestCase
     public function test_filters_can_be_combined(): void
     {
         $this->assertSame([$this->chatGpt->id], $this->listedIds(['category' => 'chat', 'company_role' => 'backend']));
-        $this->assertSame([$this->chatGpt->id], $this->listedIds(['tag' => 'llm', 'company_role' => 'designer', 'search' => 'chat']));
-        $this->assertSame([], $this->listedIds(['tag' => 'images', 'company_role' => 'backend']));
+        $this->assertSame([$this->chatGpt->id], $this->listedIds(['tags' => ['llm'], 'company_role' => 'designer', 'search' => 'chat']));
+        $this->assertSame([], $this->listedIds(['tags' => ['images'], 'company_role' => 'backend']));
     }
 
     public function test_soft_deleted_tools_are_not_listed(): void

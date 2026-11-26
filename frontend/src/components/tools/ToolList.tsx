@@ -1,17 +1,25 @@
 "use client";
 
+import { ChevronDown, ChevronLeft, ChevronRight, Heart, LayoutGrid, Plus, RotateCcw, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import * as api from "@/lib/api";
 import type { Category, CompanyRole, Paginated, Tag, Tool } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import TagFilter from "./TagFilter";
 import ToolCard from "./ToolCard";
-import {
-  inputClassName,
-  mutedTextClassName,
-  primaryButtonClassName,
-  secondaryButtonClassName,
-} from "@/styles/classNames";
+import { mutedTextClassName } from "@/styles/classNames";
+
+// The backend accepts at most this many tags in one filter (IndexToolRequest::MAX_TAGS).
+const MAX_TAGS = 10;
+
+const filterFieldClassName =
+  "h-11 w-full rounded-xl border border-input bg-card text-sm font-medium shadow-xs outline-none transition-colors focus-visible:border-violet-500 focus-visible:ring-3 focus-visible:ring-violet-500/20";
+
+const SKELETON_CARDS = 6;
 
 const SEARCH_DELAY = 300;
 
@@ -36,7 +44,8 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
   const urlSearch = searchParams.get("search") ?? "";
   const companyRole = searchParams.get("company_role") ?? "";
   const category = searchParams.get("category") ?? "";
-  const tag = searchParams.get("tag") ?? "";
+  // Each picked tag is a separate `tag` parameter: ?tag=llm&tag=images.
+  const tags = useMemo(() => [...new Set(searchParams.getAll("tag").filter(Boolean))], [searchParams]);
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
   const [search, setSearch] = useState(urlSearch);
@@ -55,16 +64,19 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
     categories: [],
     tags: [],
   });
+  // Names of the tags picked in this visit, so their chips do not show only the slug.
+  const [pickedTagNames, setPickedTagNames] = useState<Record<string, string>>({});
 
   const updateQuery = useCallback(
-    (changes: Record<string, string | null>) => {
+    (changes: Record<string, string | string[] | null>) => {
       const params = new URLSearchParams(window.location.search);
 
       for (const [key, value] of Object.entries(changes)) {
-        if (value) {
+        params.delete(key);
+        if (Array.isArray(value)) {
+          value.forEach((item) => params.append(key, item));
+        } else if (value) {
           params.set(key, value);
-        } else {
-          params.delete(key);
         }
       }
 
@@ -76,6 +88,19 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
 
   // A filter change always starts again from the first page.
   const setFilter = (key: string, value: string) => updateQuery({ [key]: value || null, page: null });
+
+  const addTag = (tag: Tag) => {
+    if (tags.includes(tag.slug) || tags.length >= MAX_TAGS) {
+      return;
+    }
+    setPickedTagNames((names) => ({ ...names, [tag.slug]: tag.name }));
+    updateQuery({ tag: [...tags, tag.slug], page: null });
+  };
+
+  const removeTag = (slug: string) => updateQuery({ tag: tags.filter((picked) => picked !== slug), page: null });
+
+  const tagName = (slug: string) =>
+    pickedTagNames[slug] ?? options.tags.find((option) => option.slug === slug)?.name ?? slug;
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -115,7 +140,7 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
           search: urlSearch,
           company_role: companyRole,
           category,
-          tag,
+          tags,
           favorites: favoritesOnly ? 1 : undefined,
           page,
         },
@@ -131,84 +156,144 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
       });
 
     return () => controller.abort();
-  }, [query, urlSearch, companyRole, category, tag, favoritesOnly, page]);
+  }, [query, urlSearch, companyRole, category, tags, favoritesOnly, page]);
 
   const isLoading = tools === null || tools.query !== query;
-  const hasFilters = Boolean(urlSearch || companyRole || category || tag);
-
-  // A tag reached through a link may not be among the suggested tags.
-  const tagOptions = tag && !options.tags.some((option) => option.slug === tag)
-    ? [...options.tags, { id: 0, name: tag, slug: tag }]
-    : options.tags;
+  const hasFilters = Boolean(urlSearch || companyRole || category || tags.length > 0);
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {favoritesOnly ? "Любими инструменти" : "AI инструменти"}
-        </h1>
-        <Link href="/tools/new" className={primaryButtonClassName}>
-          + Добави инструмент
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-md shadow-violet-600/30">
+            {favoritesOnly ? (
+              <Heart className="size-7" strokeWidth={2.25} aria-hidden="true" />
+            ) : (
+              <LayoutGrid className="size-7" strokeWidth={2.25} aria-hidden="true" />
+            )}
+          </span>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {favoritesOnly ? "Любими инструменти" : "AI инструменти"}
+            </h1>
+            <p className="text-muted-foreground">
+              {favoritesOnly
+                ? "Инструментите, които си отбелязал като любими."
+                : "Разгледай подбраните AI инструменти на екипа."}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/tools/new"
+          className={cn(
+            buttonVariants(),
+            "h-11 rounded-xl bg-violet-600 px-5 text-white shadow-md shadow-violet-600/20 hover:bg-violet-700",
+          )}
+        >
+          <Plus className="size-5" aria-hidden="true" />
+          Добави инструмент
         </Link>
-      </div>
+      </header>
 
       <form
         role="search"
         onSubmit={(event) => event.preventDefault()}
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="flex flex-col gap-3"
       >
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Търсене по име
+        <label className="relative">
+          <span className="sr-only">Търсене по име</span>
+          <Search
+            className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <input
             type="search"
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="напр. ChatGPT"
-            className={inputClassName}
+            placeholder="Търси по име…"
+            className={cn(filterFieldClassName, "pr-3.5 pl-10 font-normal placeholder:text-muted-foreground")}
           />
         </label>
 
-        <FilterSelect
-          label="Роля във фирмата"
-          value={companyRole}
-          onChange={(value) => setFilter("company_role", value)}
-          options={options.companyRoles.map((role) => ({ value: role.slug, label: role.name }))}
-        />
-        <FilterSelect
-          label="Категория"
-          value={category}
-          onChange={(value) => setFilter("category", value)}
-          options={options.categories.map((option) => ({ value: option.slug, label: option.name }))}
-        />
-        <FilterSelect
-          label="Таг"
-          value={tag}
-          onChange={(value) => setFilter("tag", value)}
-          options={tagOptions.map((option) => ({ value: option.slug, label: option.name }))}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+            <TagFilter
+              picked={tags}
+              initialTags={options.tags}
+              onPick={addTag}
+              disabled={tags.length >= MAX_TAGS}
+            />
+            <FilterSelect
+              label="Роля във фирмата"
+              allLabel="Всички роли"
+              value={companyRole}
+              onChange={(value) => setFilter("company_role", value)}
+              options={options.companyRoles.map((role) => ({ value: role.slug, label: role.name }))}
+            />
+            <FilterSelect
+              label="Категория"
+              allLabel="Всички категории"
+              value={category}
+              onChange={(value) => setFilter("category", value)}
+              options={options.categories.map((option) => ({ value: option.slug, label: option.name }))}
+            />
+          </div>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                window.clearTimeout(searchTimeout.current);
+                router.replace(pathname, { scroll: false });
+              }}
+              className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 lg:self-auto dark:text-violet-300 dark:hover:bg-violet-500/10"
+            >
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Изчисти филтрите
+            </button>
+          )}
+        </div>
       </form>
 
-      {hasFilters && (
-        <button
-          type="button"
-          onClick={() => {
-            window.clearTimeout(searchTimeout.current);
-            router.replace(pathname, { scroll: false });
-          }}
-          className="self-start text-sm text-indigo-600 hover:underline"
-        >
-          Изчисти филтрите
-        </button>
+      {tags.length > 0 && (
+        <ul aria-label="Избрани тагове" className="-mt-3 flex flex-wrap items-center gap-2">
+          {tags.map((slug) => (
+            <li
+              key={slug}
+              className="inline-flex items-center gap-1 rounded-full bg-violet-100 py-1 pr-1 pl-3 text-sm font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
+            >
+              #{tagName(slug)}
+              <button
+                type="button"
+                onClick={() => removeTag(slug)}
+                aria-label={`Премахни таг ${tagName(slug)}`}
+                className="flex size-5 items-center justify-center rounded-full hover:bg-violet-200 dark:hover:bg-violet-500/25"
+              >
+                <X className="size-3.5" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       {isLoading ? (
-        <p className={mutedTextClassName}>Зареждане…</p>
+        <ul aria-label="Зареждане" className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: SKELETON_CARDS }, (_, index) => (
+            <li key={index} className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-sm">
+              <Skeleton className="size-16 rounded-2xl" />
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </li>
+          ))}
+        </ul>
       ) : tools.status === "error" ? (
         <p role="alert" className="text-red-600 dark:text-red-400">
           Инструментите не можаха да се заредят. Опитай отново по-късно.
         </p>
       ) : tools.result.data.length === 0 ? (
-        <p className={mutedTextClassName}>
+        <p className={cn("rounded-2xl border border-dashed bg-card p-10 text-center", mutedTextClassName)}>
           {hasFilters
             ? "Няма инструменти, които отговарят на филтрите."
             : favoritesOnly
@@ -217,7 +302,7 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
         </p>
       ) : (
         <>
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {tools.result.data.map((tool) => (
               <li key={tool.id}>
                 <ToolCard tool={tool} />
@@ -239,28 +324,53 @@ export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: bo
 
 function FilterSelect({
   label,
+  allLabel,
   value,
   onChange,
   options,
 }: {
   label: string;
+  allLabel: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm font-medium">
-      {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClassName}>
-        <option value="">Всички</option>
+    <label className="relative">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={cn(filterFieldClassName, "cursor-pointer appearance-none truncate pr-9 pl-3.5")}
+      >
+        <option value="">{allLabel}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
+      <ChevronDown
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden="true"
+      />
     </label>
   );
+}
+
+// The page numbers to show: the first, the last and the ones next to the current page.
+function visiblePages(page: number, lastPage: number): (number | "gap")[] {
+  const pages: (number | "gap")[] = [];
+
+  for (let number = 1; number <= lastPage; number++) {
+    if (number === 1 || number === lastPage || Math.abs(number - page) <= 1) {
+      pages.push(number);
+    } else if (pages[pages.length - 1] !== "gap") {
+      pages.push("gap");
+    }
+  }
+
+  return pages;
 }
 
 function Pagination({
@@ -274,27 +384,61 @@ function Pagination({
   total: number;
   onChange: (page: number) => void;
 }) {
+  const arrowClassName =
+    "flex size-9 items-center justify-center rounded-lg border bg-card text-muted-foreground shadow-xs transition-colors hover:border-violet-300 hover:text-violet-700 disabled:pointer-events-none disabled:opacity-40";
+
   return (
-    <nav aria-label="Страници" className="flex items-center justify-between gap-4 text-sm">
-      <button
-        type="button"
-        onClick={() => onChange(page - 1)}
-        disabled={page <= 1}
-        className={secondaryButtonClassName}
-      >
-        ← Предишна
-      </button>
-      <span className={mutedTextClassName}>
-        Страница {page} от {lastPage} · {total} инструмента
-      </span>
-      <button
-        type="button"
-        onClick={() => onChange(page + 1)}
-        disabled={page >= lastPage}
-        className={secondaryButtonClassName}
-      >
-        Следваща →
-      </button>
+    <nav aria-label="Страници" className="flex flex-col items-center gap-2">
+      {lastPage > 1 && (
+        <ul className="flex items-center gap-2">
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange(page - 1)}
+              disabled={page <= 1}
+              aria-label="Предишна страница"
+              className={arrowClassName}
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+          </li>
+          {visiblePages(page, lastPage).map((item, index) =>
+            item === "gap" ? (
+              <li key={`gap-${index}`} aria-hidden="true" className="px-1 text-muted-foreground">
+                …
+              </li>
+            ) : (
+              <li key={item}>
+                <button
+                  type="button"
+                  onClick={() => onChange(item)}
+                  aria-current={item === page ? "page" : undefined}
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-lg text-sm font-semibold transition-colors",
+                    item === page
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                      : "border bg-card shadow-xs hover:border-violet-300 hover:text-violet-700",
+                  )}
+                >
+                  {item}
+                </button>
+              </li>
+            ),
+          )}
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange(page + 1)}
+              disabled={page >= lastPage}
+              aria-label="Следваща страница"
+              className={arrowClassName}
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </li>
+        </ul>
+      )}
+      <p className={cn("text-sm", mutedTextClassName)}>{total} инструмента</p>
     </nav>
   );
 }
