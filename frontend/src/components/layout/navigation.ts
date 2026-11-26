@@ -12,4 +12,15 @@ export const MAIN_NAV: NavItem[] = [
   { label: "Профил", href: "/profile", icon: UserRound },
 ];
 
+export type AdminNavItem = { label: string; href: string };
+
+// The admin pages, shown under "Админ" in the sidebar to admins only. The backend
+// guards the pages themselves; this list only decides what the sidebar shows.
+export const ADMIN_NAV: AdminNavItem[] = [
+  { label: "Потребители", href: "/admin/users" },
+  { label: "Длъжности", href: "/admin/company-roles" },
+  { label: "Категории", href: "/admin/categories" },
+  { label: "Тагове", href: "/admin/tags" },
+];
+
 export const HOME_HREF = "/dashboard";

@@ -157,7 +157,7 @@ class CategorySuggestionTest extends TestCase
         $category = Category::factory()->pending()->create(['name' => 'Глас и видео']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->deleteJson("/api/categories/{$category->id}")
+            ->postJson("/api/categories/{$category->id}/reject")
             ->assertNoContent();
 
         $this->assertModelMissing($category);
@@ -178,7 +178,7 @@ class CategorySuggestionTest extends TestCase
             ->assertConflict();
 
         $this->actingAs($admin)
-            ->deleteJson("/api/categories/{$category->id}")
+            ->postJson("/api/categories/{$category->id}/reject")
             ->assertConflict();
 
         $this->assertModelExists($category);
@@ -191,7 +191,7 @@ class CategorySuggestionTest extends TestCase
 
         $this->actingAs($user)->getJson('/api/categories/pending')->assertForbidden();
         $this->actingAs($user)->postJson("/api/categories/{$category->id}/approve")->assertForbidden();
-        $this->actingAs($user)->deleteJson("/api/categories/{$category->id}")->assertForbidden();
+        $this->actingAs($user)->postJson("/api/categories/{$category->id}/reject")->assertForbidden();
 
         $this->assertNull($category->fresh()->approved_at);
     }
@@ -202,7 +202,7 @@ class CategorySuggestionTest extends TestCase
 
         $this->getJson('/api/categories/pending')->assertUnauthorized();
         $this->postJson("/api/categories/{$category->id}/approve")->assertUnauthorized();
-        $this->deleteJson("/api/categories/{$category->id}")->assertUnauthorized();
+        $this->postJson("/api/categories/{$category->id}/reject")->assertUnauthorized();
     }
 
     public function test_a_pending_category_cannot_be_picked_for_a_tool(): void

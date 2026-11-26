@@ -85,16 +85,16 @@ class UserListTest extends TestCase
         $this->assertSame([$this->admin->id, $boris->id, $zora->id], $this->listedIds());
     }
 
-    public function test_users_are_paginated_by_20(): void
+    public function test_users_are_paginated_by_10(): void
     {
-        User::factory()->count(24)->create();
+        User::factory()->count(14)->create();
 
         $this->actingAs($this->admin)
             ->getJson('/api/users')
             ->assertOk()
-            ->assertJsonCount(20, 'data')
-            ->assertJsonPath('meta.per_page', 20)
-            ->assertJsonPath('meta.total', 25)
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('meta.per_page', 10)
+            ->assertJsonPath('meta.total', 15)
             ->assertJsonPath('meta.last_page', 2);
 
         $this->actingAs($this->admin)

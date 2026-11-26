@@ -218,6 +218,28 @@ class ToolFilterTest extends TestCase
         $this->assertSame($withThreeTools, $countQueries());
     }
 
+    public function test_mine_lists_only_the_tools_the_user_added(): void
+    {
+        $own = Tool::factory()->for($this->user)->create(['name' => 'Own tool']);
+
+        $this->assertSame([$own->id], $this->listedIds(['mine' => '1']));
+    }
+
+    public function test_mine_combines_with_other_filters(): void
+    {
+        Tool::factory()->for($this->user)->create(['name' => 'Own tool']);
+
+        $this->assertSame([], $this->listedIds(['mine' => '1', 'search' => 'ChatGPT']));
+    }
+
+    public function test_invalid_mine_value_is_rejected(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson('/api/tools?mine=yes')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('mine');
+    }
+
     public function test_invalid_page_is_rejected(): void
     {
         $this->actingAs($this->user)

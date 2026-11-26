@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import * as api from "@/lib/api";
 import { ApiError, type CompanyRole, type ValidationErrors } from "@/lib/api";
+import AdminPagination, { usePagedItems } from "@/components/admin/AdminPagination";
 import NameSlugFields, { canSendNameSlug } from "@/components/tools/NameSlugFields";
 import {
   chipClassName,
@@ -56,7 +57,7 @@ export default function CompanyRoleManager() {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Длъжност във фирмата</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Длъжности</h1>
         <p className={mutedTextClassName}>
           Slug-ът не може да се променя след създаване. Длъжност, която е зададена на потребители, не може да се изтрие.
         </p>
@@ -78,34 +79,61 @@ export default function CompanyRoleManager() {
         </p>
       )}
 
-      <h2 className="text-lg font-semibold">Съществуващи роли</h2>
+      <h2 className="text-lg font-semibold">Съществуващи длъжности</h2>
 
       {state.status === "loading" && <p className={mutedTextClassName}>Зареждане…</p>}
 
       {state.status === "error" && (
         <p role="alert" className="text-red-600 dark:text-red-400">
-          Ролите не можаха да се заредят. Опитай отново по-късно.
+          Длъжностите не можаха да се заредят. Опитай отново по-късно.
         </p>
       )}
 
       {state.status === "ready" && state.roles.length === 0 && (
-        <p className={mutedTextClassName}>Все още няма роли.</p>
+        <p className={mutedTextClassName}>Все още няма длъжности.</p>
       )}
 
       {state.status === "ready" && state.roles.length > 0 && (
-        <ul className="flex flex-col gap-3">
-          {state.roles.map((role) => (
-            <RoleItem
-              key={role.id}
-              role={role}
-              onMessage={setMessage}
-              onRenamed={(renamed) => updateRoles((roles) => roles.map((item) => (item.id === renamed.id ? renamed : item)))}
-              onDeleted={(id) => updateRoles((roles) => roles.filter((item) => item.id !== id))}
-            />
-          ))}
-        </ul>
+        <RoleList
+          roles={state.roles}
+          onMessage={setMessage}
+          onRenamed={(renamed) => updateRoles((roles) => roles.map((item) => (item.id === renamed.id ? renamed : item)))}
+          onDeleted={(id) => updateRoles((roles) => roles.filter((item) => item.id !== id))}
+        />
       )}
     </section>
+  );
+}
+
+// Ten roles per page.
+function RoleList({
+  roles,
+  onMessage,
+  onRenamed,
+  onDeleted,
+}: {
+  roles: CompanyRole[];
+  onMessage: (message: Message | null) => void;
+  onRenamed: (role: CompanyRole) => void;
+  onDeleted: (id: number) => void;
+}) {
+  const { pageItems, page, lastPage, setPage } = usePagedItems(roles);
+
+  return (
+    <>
+      <ul className="flex flex-col gap-3">
+        {pageItems.map((role) => (
+          <RoleItem key={role.id} role={role} onMessage={onMessage} onRenamed={onRenamed} onDeleted={onDeleted} />
+        ))}
+      </ul>
+      <AdminPagination
+        page={page}
+        lastPage={lastPage}
+        total={roles.length}
+        itemsLabel={roles.length === 1 ? "длъжност" : "длъжности"}
+        onChange={setPage}
+      />
+    </>
   );
 }
 
@@ -155,7 +183,7 @@ function AddRoleForm({ onCreated }: { onCreated: (role: CompanyRole) => void }) 
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      <h2 className="text-lg font-semibold">Нова Длъжност</h2>
+      <h2 className="text-lg font-semibold">Нова длъжност</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <NameSlugFields
@@ -182,7 +210,7 @@ function AddRoleForm({ onCreated }: { onCreated: (role: CompanyRole) => void }) 
         disabled={isSaving || !canSendNameSlug(name, slug)}
         className={`${primaryButtonClassName} self-start`}
       >
-        {isSaving ? "Добавяне…" : "Добави Длъжност"}
+        {isSaving ? "Добавяне…" : "Добави длъжност"}
       </button>
     </form>
   );

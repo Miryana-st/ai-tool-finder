@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tool;
 use App\Actions\Tool\SaveSuggestion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreCategoryRequest;
+use App\Http\Requests\Tool\UpdateCategoryRequest;
 use App\Http\Resources\Tool\CategoryResource;
 use App\Models\Tool\Category;
 use Illuminate\Http\JsonResponse;
@@ -15,11 +16,36 @@ use Illuminate\Support\Facades\Gate;
 class CategoryController extends Controller
 {
     /**
-     * List the approved categories (the ones users can pick).
+     * List the approved categories (the ones users can pick), each with the
+     * number of its tools (deleted tools are not counted).
      */
     public function index(): AnonymousResourceCollection
     {
-        return CategoryResource::collection(Category::approved()->orderBy('name')->get());
+        return CategoryResource::collection(
+            Category::approved()->withCount('tools')->orderBy('name')->get(),
+        );
+    }
+
+    /**
+     * Rename a category or change its description. The slug stays.
+     */
+    public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
+    {
+        $category->update($request->validated());
+
+        return new CategoryResource($category->loadCount('tools'));
+    }
+
+    /**
+     * Delete a category, approved or not. Tools keep their other categories.
+     */
+    public function destroy(Category $category): Response
+    {
+        Gate::authorize('delete', $category);
+
+        $category->delete();
+
+        return response()->noContent();
     }
 
     /**

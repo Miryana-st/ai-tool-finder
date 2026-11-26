@@ -4,7 +4,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import CompanyRoleManager from "@/components/admin/CompanyRoleManager";
 
 export const metadata: Metadata = {
-  title: "Роли във фирмата | AI-Finder",
+  title: "Длъжности | AI-Finder",
 };
 
 export default function AdminCompanyRolesPage() {

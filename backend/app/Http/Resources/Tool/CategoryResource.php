@@ -24,6 +24,7 @@ class CategoryResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'is_approved' => $this->isApproved(),
+            'tools_count' => $this->whenCounted('tools'),
             'suggested_by' => $this->whenLoaded('suggestedBy', fn () => $this->suggestedBy ? [
                 'id' => $this->suggestedBy->id,
                 'name' => $this->suggestedBy->name,

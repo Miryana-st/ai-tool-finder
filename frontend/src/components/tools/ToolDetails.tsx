@@ -194,7 +194,7 @@ function ToolView({ tool }: { tool: Tool }) {
         <div className="flex flex-col gap-6">
           <nav
             aria-label="Секции"
-            className="flex overflow-x-auto rounded-2xl border bg-card text-sm font-medium shadow-sm"
+            className="flex overflow-x-auto rounded-2xl border bg-card text-sm font-medium shadow-sm [scrollbar-width:none]"
           >
             {sections.map(({ id, label, icon: Icon }) => (
               <a

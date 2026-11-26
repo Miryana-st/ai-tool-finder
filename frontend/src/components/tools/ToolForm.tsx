@@ -218,7 +218,7 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
               value={fields.description}
               onChange={(event) => setField("description", event.target.value)}
               rows={4}
-              placeholder="Какво представлява инструментът и с какво е специален? Поддържа Markdown."
+              placeholder="Какво представлява инструментът и с какво е специален?"
               aria-invalid={Boolean(error("description"))}
               className={formFieldClassName}
             />
@@ -229,7 +229,7 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
               value={fields.how_to_use}
               onChange={(event) => setField("how_to_use", event.target.value)}
               rows={4}
-              placeholder="Стъпка по стъпка… Поддържа Markdown."
+              placeholder={"Стъпка по стъпка:\n1.\n2.\n3. "}
               aria-invalid={Boolean(error("how_to_use"))}
               className={formFieldClassName}
             />
@@ -262,7 +262,7 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
               value={fields.examples}
               onChange={(event) => setField("examples", event.target.value)}
               rows={3}
-              placeholder="Markdown, напр. - [Заглавие](https://пример)"
+              placeholder=""
               aria-invalid={Boolean(error("examples"))}
               className={formFieldClassName}
             />

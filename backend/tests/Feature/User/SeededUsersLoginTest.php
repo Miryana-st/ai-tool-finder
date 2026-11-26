@@ -5,7 +5,6 @@ namespace Tests\Feature\User;
 use App\Enums\User\SystemRole;
 use App\Models\User\CompanyRole;
 use App\Models\User\User;
-use App\Services\DashboardMenu;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -90,8 +89,7 @@ class SeededUsersLoginTest extends TestCase
         $this->getJson('/api/dashboard')
             ->assertOk()
             ->assertJsonPath('data.user.name', $user->name)
-            ->assertJsonPath('data.user.company_role', $companyRole->slug)
-            ->assertJsonPath('data.menu', app(DashboardMenu::class)->for($user));
+            ->assertJsonPath('data.user.company_role', $companyRole->slug);
 
         $this->postJson('/api/logout')->assertNoContent();
 
@@ -116,14 +114,5 @@ class SeededUsersLoginTest extends TestCase
 
         $this->assertGuest();
         $this->getJson('/api/user')->assertUnauthorized();
-    }
-
-    public function test_each_seeded_user_gets_a_different_menu(): void
-    {
-        $menus = User::with('companyRole')->get()
-            ->map(fn (User $user) => array_column(app(DashboardMenu::class)->for($user), 'key'))
-            ->map(fn (array $keys) => implode(',', $keys));
-
-        $this->assertSame($menus->count(), $menus->unique()->count(), 'Two seeded users share the same dashboard menu.');
     }
 }

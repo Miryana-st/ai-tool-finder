@@ -11,10 +11,19 @@ function initials(name: string): string {
     .join("");
 }
 
-export default function UserAvatar({ name, className }: { name: string; className?: string }) {
+export default function UserAvatar({
+  name,
+  className,
+  initialsClassName,
+}: {
+  name: string;
+  className?: string;
+  // E.g. a bigger text size for a big avatar.
+  initialsClassName?: string;
+}) {
   return (
     <Avatar className={cn("size-9", className)}>
-      <AvatarFallback className="bg-linear-to-br from-violet-400 to-indigo-600 font-semibold text-white">
+      <AvatarFallback className={cn("bg-linear-to-br from-violet-400 to-indigo-600 font-semibold text-white", initialsClassName)}>
         {initials(name)}
       </AvatarFallback>
     </Avatar>

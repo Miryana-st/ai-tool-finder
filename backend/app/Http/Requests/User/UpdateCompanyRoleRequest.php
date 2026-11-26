@@ -19,7 +19,7 @@ class UpdateCompanyRoleRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * The slug cannot change: dashboard menus in config/menus.php are keyed by it.
+     * The slug cannot change: users and tool filters refer to the role by it.
      *
      * @return array<string, array<int, mixed>>
      */

@@ -44,4 +44,20 @@ class CategoryPolicy
     {
         return $user->isAdmin();
     }
+
+    /**
+     * Determine whether the user can rename the category.
+     */
+    public function update(User $user, Category $category): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can delete the category, approved or not.
+     */
+    public function delete(User $user, Category $category): bool
+    {
+        return $user->isAdmin();
+    }
 }

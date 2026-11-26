@@ -140,7 +140,7 @@ class TagSuggestionTest extends TestCase
         $tag = Tag::factory()->pending()->create(['name' => 'Kotlin', 'slug' => 'kotlin']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->deleteJson("/api/tags/{$tag->id}")
+            ->postJson("/api/tags/{$tag->id}/reject")
             ->assertNoContent();
 
         $this->assertModelMissing($tag);
@@ -156,7 +156,7 @@ class TagSuggestionTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->postJson("/api/tags/{$tag->id}/approve")->assertConflict();
-        $this->actingAs($admin)->deleteJson("/api/tags/{$tag->id}")->assertConflict();
+        $this->actingAs($admin)->postJson("/api/tags/{$tag->id}/reject")->assertConflict();
 
         $this->assertModelExists($tag);
     }
@@ -168,7 +168,7 @@ class TagSuggestionTest extends TestCase
 
         $this->actingAs($user)->getJson('/api/tags/pending')->assertForbidden();
         $this->actingAs($user)->postJson("/api/tags/{$tag->id}/approve")->assertForbidden();
-        $this->actingAs($user)->deleteJson("/api/tags/{$tag->id}")->assertForbidden();
+        $this->actingAs($user)->postJson("/api/tags/{$tag->id}/reject")->assertForbidden();
 
         $this->assertNull($tag->fresh()->approved_at);
     }
@@ -180,7 +180,7 @@ class TagSuggestionTest extends TestCase
         $this->postJson('/api/tags', ['name' => 'Kotlin', 'slug' => 'kotlin'])->assertUnauthorized();
         $this->getJson('/api/tags/pending')->assertUnauthorized();
         $this->postJson("/api/tags/{$tag->id}/approve")->assertUnauthorized();
-        $this->deleteJson("/api/tags/{$tag->id}")->assertUnauthorized();
+        $this->postJson("/api/tags/{$tag->id}/reject")->assertUnauthorized();
     }
 
     public function test_the_suggestion_stays_when_its_user_is_deleted(): void

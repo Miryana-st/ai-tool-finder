@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
-import { DashboardProvider } from "@/context/DashboardContext";
 import AppBreadcrumbs from "./AppBreadcrumbs";
 import AppSidebar from "./AppSidebar";
 import AppTopbar from "./AppTopbar";
@@ -24,19 +23,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <DashboardProvider>
-      <BreadcrumbProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <AppTopbar />
-            <div className="w-full flex-1 px-4 py-8 md:px-8">
-              <AppBreadcrumbs />
-              {children}
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
-      </BreadcrumbProvider>
-    </DashboardProvider>
+    <BreadcrumbProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <AppTopbar />
+          <div className="w-full flex-1 px-4 py-8 md:px-8">
+            <AppBreadcrumbs />
+            {children}
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </BreadcrumbProvider>
   );
 }

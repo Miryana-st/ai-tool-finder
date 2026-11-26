@@ -18,6 +18,7 @@ type Props = {
 };
 
 // A field for adding tags to the tool filters: typing shows the matching approved tags.
+// Picking a tag closes the list; another click in the field opens it for the next tag.
 export default function TagFilter({ picked, initialTags, onPick, disabled = false, className }: Props) {
   const listId = useId();
   const [text, setText] = useState("");
@@ -47,9 +48,11 @@ export default function TagFilter({ picked, initialTags, onPick, disabled = fals
   const source = text.trim() === "" ? initialTags : found.search === search ? found.tags : [];
   const matches = source.filter((tag) => !picked.includes(tag.slug));
 
+  // The list closes after a pick; a click in the field (or typing) opens it again.
   const pick = (tag: Tag) => {
     onPick(tag);
     setText("");
+    setIsOpen(false);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -85,6 +88,7 @@ export default function TagFilter({ picked, initialTags, onPick, disabled = fals
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
+          onClick={() => setIsOpen(true)}
           onBlur={() => setIsOpen(false)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
