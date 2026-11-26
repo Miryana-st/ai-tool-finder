@@ -392,6 +392,37 @@ export type NewUserInput = {
   system_role: User["system_role"];
 };
 
+// Admin only: the details an admin can change. An empty password keeps the old
+// one; a new one signs the user out everywhere.
+export type UserUpdateInput = {
+  name: string;
+  email: string;
+  company_role: string;
+  password: string;
+  password_confirmation: string;
+};
+
+// Admin only.
+export async function getUserById(id: number, signal?: AbortSignal): Promise<User> {
+  const response = await apiFetch(`/api/users/${id}`, { signal });
+  const body: { data: User } = await response.json();
+  return body.data;
+}
+
+// Admin only. The system role has its own call (updateUserSystemRole).
+export async function updateUser(id: number, input: UserUpdateInput): Promise<User> {
+  const response = await apiFetch(`/api/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...input,
+      password: input.password || null,
+      password_confirmation: input.password_confirmation || null,
+    }),
+  });
+  const body: { data: User } = await response.json();
+  return body.data;
+}
+
 export async function createUser(input: NewUserInput): Promise<User> {
   const response = await apiFetch("/api/users", {
     method: "POST",

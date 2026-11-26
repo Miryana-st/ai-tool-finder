@@ -30,6 +30,8 @@ class SystemRoleMiddlewareTest extends TestCase
         'api.company-roles.destroy',
         'api.users.index',
         'api.users.store',
+        'api.users.show',
+        'api.users.update',
         'api.users.destroy',
         'api.users.system-role.update',
         'api.users.two-factor.destroy',
@@ -149,6 +151,8 @@ class SystemRoleMiddlewareTest extends TestCase
         $this->deleteJson("/api/company-roles/{$companyRole->id}")->assertForbidden();
         $this->getJson('/api/users')->assertForbidden();
         $this->postJson('/api/users', [])->assertForbidden();
+        $this->getJson("/api/users/{$other->id}")->assertForbidden();
+        $this->putJson("/api/users/{$other->id}", ['name' => 'Хакер'])->assertForbidden();
         $this->deleteJson("/api/users/{$other->id}")->assertForbidden();
         $this->patchJson("/api/users/{$other->id}/system-role", ['system_role' => 'admin'])->assertForbidden();
         $this->deleteJson("/api/users/{$other->id}/two-factor-authentication")->assertForbidden();

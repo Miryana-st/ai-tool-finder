@@ -2,11 +2,8 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
-use App\Models\User\User;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -30,16 +27,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Views are disabled (API-only backend), so the reset link points to the frontend.
-        ResetPassword::createUrlUsing(fn (User $user, string $token) => config('app.frontend_url')
-            .'/reset-password?'.http_build_query([
-                'token' => $token,
-                'email' => $user->getEmailForPasswordReset(),
-            ]));
-
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
         RateLimiter::for('login', function (Request $request) {

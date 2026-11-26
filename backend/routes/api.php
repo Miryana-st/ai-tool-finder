@@ -37,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users', [UserController::class, 'store'])
             ->name('api.users.store');
 
+        Route::get('/users/{user}', [UserController::class, 'show'])
+            ->name('api.users.show');
+
+        Route::put('/users/{user}', [UserController::class, 'update'])
+            ->name('api.users.update');
+
         Route::delete('/users/{user}', [UserController::class, 'destroy'])
             ->name('api.users.destroy');
 
