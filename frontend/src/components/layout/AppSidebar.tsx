@@ -3,6 +3,7 @@
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
@@ -128,15 +129,26 @@ function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
   );
 }
 
-// The admin pages, folded under "Админ".
+// The admin pages, folded under "Админ". The menu opens by itself when an admin
+// page is opened (also by a link from elsewhere) and can be folded by hand.
 function AdminMenu({ current }: { current: string | null }) {
   const closeMobileMenu = useCloseMobileMenu();
   const hasActiveItem = ADMIN_NAV.some((item) => item.href === current);
+  const [open, setOpen] = useState(hasActiveItem);
+  const [wasActive, setWasActive] = useState(hasActiveItem);
+
+  // Controlled, because Base UI reads `defaultOpen` only once.
+  if (hasActiveItem !== wasActive) {
+    setWasActive(hasActiveItem);
+    if (hasActiveItem) {
+      setOpen(true);
+    }
+  }
 
   return (
     <SidebarGroup>
       <SidebarMenu>
-        <Collapsible defaultOpen={hasActiveItem} render={<SidebarMenuItem />}>
+        <Collapsible open={open} onOpenChange={setOpen} render={<SidebarMenuItem />}>
           <CollapsibleTrigger
             render={<SidebarMenuButton className={menuButtonClassName} />}
           >
