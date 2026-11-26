@@ -16,13 +16,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CompanyRole extends Model
 {
     /**
-     * Company roles that users cannot pick for themselves at registration.
-     *
-     * @var list<string>
-     */
-    public const array NOT_SELF_ASSIGNABLE = ['owner'];
-
-    /**
      * Get the users that have the company role.
      *
      * @return HasMany<User, $this>
