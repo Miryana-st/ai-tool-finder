@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Pencil,
   Settings,
+  ShieldCheck,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import ChangePasswordForm from "./ChangePasswordForm";
 import ProfileInformationForm from "./ProfileInformationForm";
 import ProfileToolList from "./ProfileToolList";
+import TwoFactorSettings from "./TwoFactorSettings";
 import { useProfileTools } from "./useProfileTools";
 
 const numberFormatter = new Intl.NumberFormat("bg-BG");
@@ -150,6 +152,9 @@ export default function ProfileOverview() {
               </SettingsCard>
               <SettingsCard icon={KeyRound} title="Смяна на паролата">
                 <ChangePasswordForm />
+              </SettingsCard>
+              <SettingsCard icon={ShieldCheck} title="Двуфакторна защита">
+                <TwoFactorSettings />
               </SettingsCard>
             </div>
           )}

@@ -30,6 +30,7 @@ class DashboardTest extends TestCase
                         'system_role_label' => 'Потребител',
                         'company_role' => 'qa',
                         'company_role_label' => 'QA',
+                        'two_factor_enabled' => false,
                     ],
                     'stats' => [
                         'tools_total' => 0,

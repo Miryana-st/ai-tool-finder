@@ -18,7 +18,10 @@ type AuthStatus = "loading" | "authenticated" | "guest";
 type AuthContextValue = {
   user: User | null;
   status: AuthStatus;
-  login: (email: string, password: string) => Promise<void>;
+  // Resolves with `twoFactor: true` when the user still has to enter a code
+  // (completeTwoFactor); otherwise the user is signed in.
+  login: (email: string, password: string) => Promise<{ twoFactor: boolean }>;
+  completeTwoFactor: (input: { code: string } | { recovery_code: string }) => Promise<void>;
   logout: () => Promise<void>;
   // Loads the user again, e.g. after they changed their name or email.
   refreshUser: () => Promise<void>;
@@ -56,7 +59,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       await api.getCsrfCookie();
-      await api.login(email, password);
+      const { two_factor } = await api.login(email, password);
+
+      if (two_factor) {
+        return { twoFactor: true };
+      }
+
+      applyUser(await api.getUser());
+      return { twoFactor: false };
+    },
+    [applyUser],
+  );
+
+  const completeTwoFactor = useCallback(
+    async (input: { code: string } | { recovery_code: string }) => {
+      await api.sendTwoFactorChallenge(input);
       applyUser(await api.getUser());
     },
     [applyUser],
@@ -73,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyUser]);
 
   const value = useMemo(
-    () => ({ user, status, login, logout, refreshUser }),
-    [user, status, login, logout, refreshUser],
+    () => ({ user, status, login, completeTwoFactor, logout, refreshUser }),
+    [user, status, login, completeTwoFactor, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

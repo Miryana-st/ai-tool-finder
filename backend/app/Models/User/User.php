@@ -16,17 +16,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * `system_role` is deliberately not fillable: it can only be changed on purpose
  * (see App\Actions\User\UpdateUserSystemRole), never by mass assignment.
+ *
+ * Two-factor authentication (authenticator app) is Fortify's: it is active once
+ * `two_factor_confirmed_at` is set. The secret and recovery codes are stored
+ * encrypted and never included in JSON.
  */
 #[Fillable(['name', 'email', 'password', 'company_role_id'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The model's default values for attributes.
@@ -47,6 +52,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_confirmed_at' => 'datetime',
             'system_role' => SystemRole::class,
         ];
     }
