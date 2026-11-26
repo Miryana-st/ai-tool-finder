@@ -4,6 +4,7 @@ namespace App\Models\Tool;
 
 use App\Models\Concerns\HasSlugFromName;
 use App\Models\Concerns\RequiresApproval;
+use App\Services\CatalogCache;
 use Database\Factories\Tool\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,16 @@ class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory, HasSlugFromName, RequiresApproval;
+
+    /**
+     * The approved categories are cached (see CatalogCache).
+     */
+    protected static function booted(): void
+    {
+        $flushCatalog = fn () => app(CatalogCache::class)->flush();
+        static::saved($flushCatalog);
+        static::deleted($flushCatalog);
+    }
 
     /**
      * Get the tools with the category.

@@ -5,6 +5,7 @@ namespace App\Models\Tool;
 use App\Models\Concerns\HasSlugFromName;
 use App\Models\User\CompanyRole;
 use App\Models\User\User;
+use App\Services\CatalogCache;
 use Database\Factories\Tool\ToolFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -106,6 +107,12 @@ class Tool extends Model
      */
     protected static function booted(): void
     {
+        // Tool counts are cached (adding, approving, editing, deleting change them).
+        $flushCatalog = fn () => app(CatalogCache::class)->flush();
+        static::saved($flushCatalog);
+        static::deleted($flushCatalog);
+        static::restored($flushCatalog);
+
         static::forceDeleting(function (Tool $tool) {
             $paths = $tool->images()->pluck('path')->all();
 

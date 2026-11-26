@@ -20,6 +20,7 @@ AI-Tool-Finder is a web application built with Laravel and Next.js, designed to 
 - Docker / Docker Compose
 - Nginx
 - Mailpit (local email testing)
+- Redis (cache)
 
 ## Project Structure
 
@@ -44,6 +45,7 @@ AI-Tool-Finder/
 | `queue`   | `ai-tool-finder-queue`   | Laravel queue worker (`queue:work`)          |
 | `node`    | `ai-tool-finder-node`    | Next.js dev server (`npm install` + `npm run dev`) |
 | `mailpit` | `ai-tool-finder-mailpit` | Catches all outgoing emails                  |
+| `redis`   | `ai-tool-finder-redis`   | Cache store (`CACHE_STORE=redis`); sessions and the queue stay in MySQL |
 
 ## Getting Started
 
@@ -81,6 +83,12 @@ If you already have the project running, rebuild the PHP image once
 (`docker compose up -d --build`) to get the upload limits from
 `docker/php/uploads.ini`, then run step 6.
 
+To switch an existing setup to the Redis cache: set `CACHE_STORE=redis` and
+`REDIS_HOST=redis` in `backend/.env`, run `docker compose up -d --build`
+(adds the `redis` service and the PHP `redis` extension), then
+`docker compose restart nginx` (a rebuilt `app` container gets a new address,
+and nginx answers 502 until it is restarted).
+
 The `queue` container restarts until step 3 is done; this is expected on the first run.
 
 ### Application URLs
@@ -112,7 +120,7 @@ docker compose down               # stop containers (database data is kept)
 
 ## Development Status
 
-- ✅ Docker environment (app, nginx, MySQL, queue, Node, Mailpit)
+- ✅ Docker environment (app, nginx, MySQL, queue, Node, Mailpit, Redis)
 - ✅ API-only Laravel backend with Fortify auth endpoints under `/api`
 - ✅ User roles with seeded sample users
 - ✅ Sanctum SPA authentication (`/sanctum/csrf-cookie`, `/api/login`, `/api/logout`, `GET /api/user`, `GET /api/dashboard`)

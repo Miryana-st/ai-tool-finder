@@ -7,8 +7,8 @@ use App\Http\Requests\User\StoreCompanyRoleRequest;
 use App\Http\Requests\User\UpdateCompanyRoleRequest;
 use App\Http\Resources\User\CompanyRoleResource;
 use App\Models\User\CompanyRole;
+use App\Services\CatalogCache;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
@@ -16,10 +16,13 @@ class CompanyRoleController extends Controller
 {
     /**
      * List all company roles. Public, so a registration form can offer them.
+     * The same for every user, so it is cached (see CatalogCache).
      */
-    public function index(): AnonymousResourceCollection
+    public function index(CatalogCache $cache): JsonResponse
     {
-        return CompanyRoleResource::collection(CompanyRole::orderBy('name')->get());
+        return response()->json($cache->remember('company-roles', fn () => CompanyRoleResource::collection(
+            CompanyRole::orderBy('name')->get(),
+        )->response()->getData(true)));
     }
 
     /**

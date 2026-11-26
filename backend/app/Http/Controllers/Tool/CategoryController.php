@@ -8,6 +8,7 @@ use App\Http\Requests\Tool\StoreCategoryRequest;
 use App\Http\Requests\Tool\UpdateCategoryRequest;
 use App\Http\Resources\Tool\CategoryResource;
 use App\Models\Tool\Category;
+use App\Services\CatalogCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -18,12 +19,13 @@ class CategoryController extends Controller
     /**
      * List the approved categories (the ones users can pick), each with the
      * number of its tools (deleted and pending tools are not counted).
+     * The same for every user, so it is cached (see CatalogCache).
      */
-    public function index(): AnonymousResourceCollection
+    public function index(CatalogCache $cache): JsonResponse
     {
-        return CategoryResource::collection(
+        return response()->json($cache->remember('categories', fn () => CategoryResource::collection(
             Category::approved()->withCount(['tools' => fn ($query) => $query->approved()])->orderBy('name')->get(),
-        );
+        )->response()->getData(true)));
     }
 
     /**
