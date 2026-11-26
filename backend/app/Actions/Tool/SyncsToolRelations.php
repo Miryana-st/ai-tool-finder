@@ -3,6 +3,7 @@
 namespace App\Actions\Tool;
 
 use App\Models\Tool\Tool;
+use App\Services\CatalogCache;
 
 /**
  * Shared steps of CreateTool and UpdateTool. Both run inside a transaction.
@@ -32,6 +33,8 @@ trait SyncsToolRelations
      * Replace the tool's categories, company roles and tags with the given ids.
      * All of them exist already: new tags are suggested separately, not here.
      *
+     * sync() fires no model events, so the cached tool counts are flushed here.
+     *
      * @param  array<string, mixed>  $data
      */
     private function syncRelations(Tool $tool, array $data): void
@@ -39,5 +42,7 @@ trait SyncsToolRelations
         $tool->categories()->sync($data['categories']);
         $tool->companyRoles()->sync($data['company_roles']);
         $tool->tags()->sync($data['tags'] ?? []);
+
+        app(CatalogCache::class)->flush();
     }
 }

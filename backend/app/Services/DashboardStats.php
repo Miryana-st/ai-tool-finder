@@ -13,6 +13,8 @@ class DashboardStats
      */
     public const int POPULAR_CATEGORIES_LIMIT = 5;
 
+    public function __construct(private readonly CatalogCache $cache) {}
+
     /**
      * Get the dashboard numbers for the user.
      *
@@ -20,6 +22,9 @@ class DashboardStats
      * categories with the most tools; categories without tools are left out.
      * `favorite_tools` counts the tools the user marked as favorite and can see
      * (approved ones and the user's own pending ones).
+     *
+     * The numbers that are the same for everyone (per company role for
+     * `tools_for_company_role`) are cached; `favorite_tools` is the user's own.
      *
      * @return array{
      *     tools_total: int,
@@ -30,11 +35,19 @@ class DashboardStats
      */
     public function for(User $user): array
     {
-        return [
+        $shared = $this->cache->remember('dashboard', fn () => [
             'tools_total' => Tool::approved()->count(),
-            'tools_for_company_role' => Tool::approved()->whereRelation('companyRoles', 'company_roles.id', $user->company_role_id)->count(),
-            'favorite_tools' => $user->favoriteTools()->visibleTo($user)->count(),
             'popular_categories' => $this->popularCategories(),
+        ]);
+
+        return [
+            'tools_total' => $shared['tools_total'],
+            'tools_for_company_role' => $this->cache->remember(
+                "dashboard.company-role.{$user->company_role_id}",
+                fn () => Tool::approved()->whereRelation('companyRoles', 'company_roles.id', $user->company_role_id)->count(),
+            ),
+            'favorite_tools' => $user->favoriteTools()->visibleTo($user)->count(),
+            'popular_categories' => $shared['popular_categories'],
         ];
     }
 
