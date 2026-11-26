@@ -95,6 +95,52 @@ class Tool extends Model
     }
 
     /**
+     * Get the users who marked the tool as favorite.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorite_tools')->withTimestamps();
+    }
+
+    /**
+     * Keep only the tools the user marked as favorite.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function favoriteOf(Builder $query, User $user): void
+    {
+        $query->whereHas('favoritedBy', fn (Builder $query) => $query->whereKey($user->getKey()));
+    }
+
+    /**
+     * Add `favorites_count` (how many users marked the tool as favorite) and
+     * `is_favorite` (whether the given user did) to each tool.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function withFavoriteInfo(Builder $query, User $user): void
+    {
+        $query
+            ->withCount('favoritedBy as favorites_count')
+            ->withExists(['favoritedBy as is_favorite' => fn (Builder $query) => $query->whereKey($user->getKey())]);
+    }
+
+    /**
+     * Load `favorites_count` and `is_favorite` (see withFavoriteInfo) on an
+     * already fetched tool.
+     */
+    public function loadFavoriteInfo(User $user): static
+    {
+        return $this
+            ->loadCount('favoritedBy as favorites_count')
+            ->loadExists(['favoritedBy as is_favorite' => fn (Builder $query) => $query->whereKey($user->getKey())]);
+    }
+
+    /**
      * Filter tools by name and by the slugs of a company role, category and tag.
      * Empty filters are ignored.
      *

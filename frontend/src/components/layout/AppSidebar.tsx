@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ChevronRight,
-  Circle,
-  House,
-  LayoutGrid,
-  ShieldCheck,
-  SquarePlus,
-  UserRound,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronRight, Circle, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -35,18 +26,9 @@ import { useDashboard } from "@/context/DashboardContext";
 import type { MenuItem } from "@/lib/api";
 import UserAvatar from "./UserAvatar";
 import LogoMark from "./LogoMark";
+import { MAIN_NAV, type NavItem } from "./navigation";
 
-type NavItem = { label: string; href: string | null; icon: LucideIcon };
-
-// A null href is a page that does not exist yet.
-const MAIN_NAV: NavItem[] = [
-  { label: "Табло", href: "/dashboard", icon: House },
-  { label: "Намери инструмент", href: "/tools", icon: LayoutGrid },
-  { label: "Добави инструмент", href: "/tools/new", icon: SquarePlus },
-  { label: "Профил", href: null, icon: UserRound },
-];
-
-// "Намери инструмент" is in the main menu, so it is left out of the role menu from the backend.
+// The tools list is in the main menu, so it is left out of the role menu from the backend.
 const MAIN_NAV_MENU_KEYS = ["tools"];
 
 const menuButtonClassName =

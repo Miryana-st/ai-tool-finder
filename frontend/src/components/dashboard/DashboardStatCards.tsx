@@ -30,7 +30,7 @@ export default function DashboardStatCards({ stats }: { stats: DashboardStats })
     },
     {
       label: "Любими",
-      value: null,
+      value: stats.favorite_tools,
       icon: Heart,
       iconClassName: "bg-rose-100 text-rose-500",
     },

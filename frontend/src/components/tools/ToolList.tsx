@@ -26,7 +26,8 @@ type FilterOptions = {
 };
 
 // The filters live in the URL query, so a filtered view can be shared as a link.
-export default function ToolList() {
+// With `favoritesOnly`, only the signed-in user's favorite tools are listed (the favorites page).
+export default function ToolList({ favoritesOnly = false }: { favoritesOnly?: boolean }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -110,7 +111,14 @@ export default function ToolList() {
 
     api
       .getTools(
-        { search: urlSearch, company_role: companyRole, category, tag, page },
+        {
+          search: urlSearch,
+          company_role: companyRole,
+          category,
+          tag,
+          favorites: favoritesOnly ? 1 : undefined,
+          page,
+        },
         controller.signal,
       )
       .then((result) => setTools({ query, status: "ready", result }))
@@ -123,7 +131,7 @@ export default function ToolList() {
       });
 
     return () => controller.abort();
-  }, [query, urlSearch, companyRole, category, tag, page]);
+  }, [query, urlSearch, companyRole, category, tag, favoritesOnly, page]);
 
   const isLoading = tools === null || tools.query !== query;
   const hasFilters = Boolean(urlSearch || companyRole || category || tag);
@@ -136,7 +144,9 @@ export default function ToolList() {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">AI инструменти</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {favoritesOnly ? "Любими инструменти" : "AI инструменти"}
+        </h1>
         <Link href="/tools/new" className={primaryButtonClassName}>
           + Добави инструмент
         </Link>
@@ -201,7 +211,9 @@ export default function ToolList() {
         <p className={mutedTextClassName}>
           {hasFilters
             ? "Няма инструменти, които отговарят на филтрите."
-            : "Все още няма добавени инструменти."}
+            : favoritesOnly
+              ? "Все още нямаш любими инструменти. Добави ги от страницата на инструмента."
+              : "Все още няма добавени инструменти."}
         </p>
       ) : (
         <>

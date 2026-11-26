@@ -49,6 +49,7 @@ class DashboardTest extends TestCase
                     'stats' => [
                         'tools_total' => 0,
                         'tools_for_company_role' => 0,
+                        'favorite_tools' => 0,
                         'popular_categories' => [],
                     ],
                 ],

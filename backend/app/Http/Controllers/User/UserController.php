@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Actions\User\CreateUser;
 use App\Actions\User\DeleteUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\IndexUserRequest;
+use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Resources\User\UserResource;
 use App\Models\User\User;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +35,16 @@ class UserController extends Controller
             ->withQueryString();
 
         return UserResource::collection($users);
+    }
+
+    /**
+     * Create a user account (admins only).
+     */
+    public function store(StoreUserRequest $request, CreateUser $createUser): JsonResponse
+    {
+        $user = $createUser->handle($request->validated());
+
+        return (new UserResource($user->load('companyRole')))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**

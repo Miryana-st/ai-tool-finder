@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tool\CategoryController;
+use App\Http\Controllers\Tool\FavoriteToolController;
 use App\Http\Controllers\Tool\TagController;
 use App\Http\Controllers\Tool\ToolController;
 use App\Http\Controllers\Tool\ToolImageController;
@@ -29,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index'])
         ->name('api.users.index');
 
+    Route::post('/users', [UserController::class, 'store'])
+        ->name('api.users.store');
+
     Route::delete('/users/{user}', [UserController::class, 'destroy'])
         ->name('api.users.destroy');
 
@@ -40,6 +44,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tools/{tool:slug}', [ToolController::class, 'show'])->name('api.tools.show');
     Route::put('/tools/{tool}', [ToolController::class, 'update'])->name('api.tools.update');
     Route::delete('/tools/{tool}', [ToolController::class, 'destroy'])->name('api.tools.destroy');
+
+    Route::put('/tools/{tool}/favorite', [FavoriteToolController::class, 'store'])->name('api.tools.favorite.store');
+    Route::delete('/tools/{tool}/favorite', [FavoriteToolController::class, 'destroy'])->name('api.tools.favorite.destroy');
 
     Route::post('/tools/{tool}/images', [ToolImageController::class, 'store'])->name('api.tools.images.store');
     Route::delete('/tools/{tool}/images/{image}', [ToolImageController::class, 'destroy'])

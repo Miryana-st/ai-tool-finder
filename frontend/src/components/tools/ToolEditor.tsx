@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
+import { useBreadcrumbLabel } from "@/context/BreadcrumbContext";
 import ToolForm from "./ToolForm";
 import ToolStateMessage from "./ToolStateMessage";
 import { useTool } from "./useTool";
@@ -13,6 +14,8 @@ export default function ToolEditor() {
   const { slug } = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const state = useTool(slug);
+
+  useBreadcrumbLabel(`/tools/${slug}`, state.status === "ready" ? state.tool.name : null);
 
   if (state.status !== "ready") {
     return <ToolStateMessage state={state} />;

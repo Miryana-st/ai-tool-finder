@@ -36,21 +36,36 @@ class DashboardStatsTest extends TestCase
             ->assertJsonPath('data.stats.tools_for_company_role', 2);
     }
 
+    public function test_counts_only_the_users_own_favorite_tools(): void
+    {
+        $user = User::factory()->create();
+        $user->favoriteTools()->attach([$this->tool()->id, $this->tool()->id]);
+        User::factory()->create()->favoriteTools()->attach($this->tool());
+
+        $this->actingAs($user)
+            ->getJson('/api/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.stats.favorite_tools', 2);
+    }
+
     public function test_deleted_tools_are_not_counted(): void
     {
         $backend = CompanyRole::where('slug', 'backend')->firstOrFail();
         $category = Category::factory()->create();
 
         $this->tool([$category], [$backend]);
-        $this->tool([$category], [$backend])->delete();
+        $deletedTool = $this->tool([$category], [$backend]);
 
         $user = User::factory()->companyRole('backend')->create();
+        $user->favoriteTools()->attach($deletedTool);
+        $deletedTool->delete();
 
         $this->actingAs($user)
             ->getJson('/api/dashboard')
             ->assertOk()
             ->assertJsonPath('data.stats.tools_total', 1)
             ->assertJsonPath('data.stats.tools_for_company_role', 1)
+            ->assertJsonPath('data.stats.favorite_tools', 0)
             ->assertJsonPath('data.stats.popular_categories.0.tools_count', 1);
     }
 

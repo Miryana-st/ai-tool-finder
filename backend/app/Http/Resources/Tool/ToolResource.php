@@ -39,6 +39,9 @@ class ToolResource extends JsonResource
             'tags' => TagResource::collection($this->whenLoaded('tags')),
             'company_roles' => CompanyRoleResource::collection($this->whenLoaded('companyRoles')),
             'images' => ToolImageResource::collection($this->whenLoaded('images')),
+            // Added by Tool::withFavoriteInfo() / loadFavoriteInfo().
+            'favorites_count' => $this->whenHas('favorites_count', fn ($count) => (int) $count),
+            'is_favorite' => $this->whenHas('is_favorite', fn ($isFavorite) => (bool) $isFavorite),
             'can' => [
                 'update' => (bool) $request->user()?->can('update', $this->resource),
                 'delete' => (bool) $request->user()?->can('delete', $this->resource),

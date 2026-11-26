@@ -15,6 +15,14 @@ class UserPolicy
     }
 
     /**
+     * Determine whether the user can create user accounts.
+     */
+    public function create(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
      * Determine whether the user can change the system role of the given user.
      */
     public function updateSystemRole(User $user, User $target): bool
