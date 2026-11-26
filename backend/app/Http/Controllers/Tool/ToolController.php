@@ -10,7 +10,9 @@ use App\Http\Requests\Tool\StoreToolRequest;
 use App\Http\Requests\Tool\UpdateToolRequest;
 use App\Http\Resources\Tool\ToolResource;
 use App\Models\Tool\Tool;
+use App\Models\User\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
@@ -30,13 +32,18 @@ class ToolController extends Controller
     private const array RELATIONS = ['user:id,name', 'categories', 'tags', 'companyRoles', 'images'];
 
     /**
-     * List tools, newest first, filtered by name, company role, category and tag.
+     * List tools, newest first, filtered by name, company role, category and tag,
+     * and with `favorites` only the signed-in user's favorite tools.
      */
     public function index(IndexToolRequest $request): AnonymousResourceCollection
     {
+        $user = $request->user();
+
         $tools = Tool::query()
             ->with(self::RELATIONS)
+            ->withFavoriteInfo($user)
             ->filter($request->validated())
+            ->when($request->boolean('favorites'), fn ($query) => $query->favoriteOf($user))
             ->latest()
             ->latest('id')
             ->paginate(self::PER_PAGE)
@@ -48,9 +55,9 @@ class ToolController extends Controller
     /**
      * Show a tool, found by its slug.
      */
-    public function show(Tool $tool): ToolResource
+    public function show(Request $request, Tool $tool): ToolResource
     {
-        return new ToolResource($tool->load(self::RELATIONS));
+        return $this->toolResource($tool, $request->user());
     }
 
     /**
@@ -60,7 +67,7 @@ class ToolController extends Controller
     {
         $tool = $createTool->handle($request->user(), $request->validated());
 
-        return (new ToolResource($tool->load(self::RELATIONS)))->response()->setStatusCode(Response::HTTP_CREATED);
+        return $this->toolResource($tool, $request->user())->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -70,7 +77,7 @@ class ToolController extends Controller
     {
         $tool = $updateTool->handle($tool, $request->validated());
 
-        return new ToolResource($tool->load(self::RELATIONS));
+        return $this->toolResource($tool, $request->user());
     }
 
     /**
@@ -83,5 +90,13 @@ class ToolController extends Controller
         $tool->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * The tool with its relations and the user's favorite info.
+     */
+    private function toolResource(Tool $tool, User $user): ToolResource
+    {
+        return new ToolResource($tool->load(self::RELATIONS)->loadFavoriteInfo($user));
     }
 }

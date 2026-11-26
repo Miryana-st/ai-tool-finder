@@ -18,10 +18,12 @@ class DashboardStats
      *
      * Deleted tools are not counted. Popular categories are the approved
      * categories with the most tools; categories without tools are left out.
+     * `favorite_tools` counts the tools the user marked as favorite.
      *
      * @return array{
      *     tools_total: int,
      *     tools_for_company_role: int,
+     *     favorite_tools: int,
      *     popular_categories: list<array{id: int, name: string, slug: string, tools_count: int}>
      * }
      */
@@ -30,6 +32,7 @@ class DashboardStats
         return [
             'tools_total' => Tool::count(),
             'tools_for_company_role' => Tool::whereRelation('companyRoles', 'company_roles.id', $user->company_role_id)->count(),
+            'favorite_tools' => $user->favoriteTools()->count(),
             'popular_categories' => $this->popularCategories(),
         ];
     }

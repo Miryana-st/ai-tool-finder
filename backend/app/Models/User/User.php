@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -68,6 +69,16 @@ class User extends Authenticatable
     public function tools(): HasMany
     {
         return $this->hasMany(Tool::class);
+    }
+
+    /**
+     * Get the tools the user marked as favorite.
+     *
+     * @return BelongsToMany<Tool, $this>
+     */
+    public function favoriteTools(): BelongsToMany
+    {
+        return $this->belongsToMany(Tool::class, 'favorite_tools')->withTimestamps();
     }
 
     /**

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +10,7 @@ import {
   dangerButtonClassName,
   inputClassName,
   mutedTextClassName,
+  primaryButtonClassName,
   secondaryButtonClassName,
 } from "@/styles/classNames";
 
@@ -215,11 +217,16 @@ export default function UserList() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Потребители</h1>
-        <p className={mutedTextClassName}>
-          Администраторите управляват ролите и потребителите. Поне един администратор винаги остава.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Потребители</h1>
+          <p className={mutedTextClassName}>
+            Администраторите управляват ролите и потребителите. Поне един администратор винаги остава.
+          </p>
+        </div>
+        <Link href="/admin/users/new" className={primaryButtonClassName}>
+          + Добави потребител
+        </Link>
       </div>
 
       <form

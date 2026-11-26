@@ -31,6 +31,8 @@ export type DashboardStats = {
   tools_total: number;
   // Tools marked as useful for the user's company role.
   tools_for_company_role: number;
+  // Tools the user marked as favorite.
+  favorite_tools: number;
   popular_categories: PopularCategory[];
 };
 
@@ -96,6 +98,9 @@ export type Tool = {
   tags: Tag[];
   company_roles: CompanyRole[];
   images: ToolImage[];
+  // How many users marked the tool as favorite, and whether the signed-in user did.
+  favorites_count: number;
+  is_favorite: boolean;
   can: { update: boolean; delete: boolean };
   created_at: string;
   updated_at: string;
@@ -120,8 +125,12 @@ export type ToolFilters = {
   company_role?: string;
   category?: string;
   tag?: string;
+  // 1: only the signed-in user's favorite tools.
+  favorites?: 1;
   page?: number;
 };
+
+export type FavoriteInfo = Pick<Tool, "is_favorite" | "favorites_count">;
 
 // Admin user list filters; `search` matches name or email, `company_role` is a slug.
 export type UserFilters = {
@@ -306,6 +315,37 @@ export async function deleteUser(id: number): Promise<void> {
 }
 
 // Admin only. Taking the role from the last admin is refused (422 on `system_role`).
+// Data an admin sends to create a user; `company_role` is a slug.
+export type NewUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  company_role: string;
+  system_role: User["system_role"];
+};
+
+export async function createUser(input: NewUserInput): Promise<User> {
+  const response = await apiFetch("/api/users", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const body: { data: User } = await response.json();
+  return body.data;
+}
+
+// The signed-in user's own password (Fortify).
+export async function updatePassword(input: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<void> {
+  await apiFetch("/api/user/password", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function updateUserSystemRole(
   id: number,
   systemRole: User["system_role"],
@@ -424,6 +464,15 @@ export async function updateTool(id: number, input: ToolInput): Promise<Tool> {
 
 export async function deleteTool(id: number): Promise<void> {
   await apiFetch(`/api/tools/${id}`, { method: "DELETE" });
+}
+
+// Adding and removing can both be repeated safely; the answer is the current state.
+export async function setToolFavorite(toolId: number, isFavorite: boolean): Promise<FavoriteInfo> {
+  const response = await apiFetch(`/api/tools/${toolId}/favorite`, {
+    method: isFavorite ? "PUT" : "DELETE",
+  });
+  const body: { data: FavoriteInfo } = await response.json();
+  return body.data;
 }
 
 export async function uploadToolImage(toolId: number, file: File): Promise<ToolImage> {
