@@ -166,6 +166,13 @@ return [
         Features::resetPasswords(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
+        // Authenticator app (TOTP) codes. `confirm`: 2FA is active only after the
+        // user enters a first code; `confirmPassword`: its settings need a recently
+        // confirmed password (POST /api/user/confirm-password).
+        Features::twoFactorAuthentication([
+            'confirm' => true,
+            'confirmPassword' => true,
+        ]),
     ],
 
 ];

@@ -76,6 +76,7 @@ class SpaAuthenticationTest extends TestCase
                     'system_role_label' => 'Потребител',
                     'company_role' => 'designer',
                     'company_role_label' => 'Дизайнер',
+                    'two_factor_enabled' => false,
                 ],
             ]);
     }

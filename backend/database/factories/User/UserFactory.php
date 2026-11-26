@@ -8,6 +8,7 @@ use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 
 /**
  * @extends Factory<User>
@@ -54,6 +55,21 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'system_role' => SystemRole::Admin,
+        ]);
+    }
+
+    /**
+     * Indicate that the user has confirmed two-factor authentication, with the
+     * given secret (a new one by default) and recovery codes.
+     *
+     * @param  list<string>  $recoveryCodes
+     */
+    public function withTwoFactor(?string $secret = null, array $recoveryCodes = ['recovery-code-1', 'recovery-code-2']): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt($secret ?? app(TwoFactorAuthenticationProvider::class)->generateSecretKey()),
+            'two_factor_recovery_codes' => encrypt(json_encode($recoveryCodes)),
+            'two_factor_confirmed_at' => now(),
         ]);
     }
 

@@ -25,6 +25,8 @@ class UserResource extends JsonResource
             'system_role_label' => $this->system_role->label(),
             'company_role' => $this->companyRole->slug,
             'company_role_label' => $this->companyRole->name,
+            // Active (confirmed) two-factor authentication.
+            'two_factor_enabled' => $this->hasEnabledTwoFactorAuthentication(),
         ];
     }
 }

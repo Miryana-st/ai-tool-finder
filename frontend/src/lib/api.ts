@@ -10,6 +10,8 @@ export type User = {
   // Position in the company (backend, qa, ...); admins can add new ones.
   company_role: string;
   company_role_label: string;
+  // Two-factor authentication with an authenticator app is on (and confirmed).
+  two_factor_enabled: boolean;
 };
 
 // Approved categories with the most tools (deleted and pending tools are not counted).
@@ -240,11 +242,74 @@ export async function getCsrfCookie(): Promise<void> {
   await apiFetch("/sanctum/csrf-cookie");
 }
 
-export async function login(email: string, password: string): Promise<void> {
-  await apiFetch("/api/login", {
+// `two_factor: true`: the password was right, but the user is signed in only
+// after sendTwoFactorChallenge() with a code from the authenticator app.
+export async function login(email: string, password: string): Promise<{ two_factor: boolean }> {
+  const response = await apiFetch("/api/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  const body: { two_factor?: boolean } = await response.json();
+  return { two_factor: Boolean(body.two_factor) };
+}
+
+// Finishes a login that asked for two-factor authentication. A wrong code is a 422
+// on `code` or `recovery_code`; each recovery code works only once.
+export async function sendTwoFactorChallenge(
+  input: { code: string } | { recovery_code: string },
+): Promise<void> {
+  await apiFetch("/api/two-factor-challenge", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+// The two-factor settings below need a recently confirmed password: without it
+// they answer 423, then confirmPassword() and try again.
+export async function confirmPassword(password: string): Promise<void> {
+  await apiFetch("/api/user/confirm-password", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+}
+
+// Creates a new secret; two-factor is active only after confirmTwoFactor().
+export async function enableTwoFactor(): Promise<void> {
+  await apiFetch("/api/user/two-factor-authentication", { method: "POST" });
+}
+
+// The QR code (SVG markup from the backend) and the secret key for manual entry.
+export async function getTwoFactorSetup(): Promise<{ svg: string; secretKey: string }> {
+  const [qrResponse, keyResponse] = await Promise.all([
+    apiFetch("/api/user/two-factor-qr-code"),
+    apiFetch("/api/user/two-factor-secret-key"),
+  ]);
+  const qr: { svg: string } = await qrResponse.json();
+  const key: { secretKey: string } = await keyResponse.json();
+  return { svg: qr.svg, secretKey: key.secretKey };
+}
+
+// A wrong code is a 422 on `code`.
+export async function confirmTwoFactor(code: string): Promise<void> {
+  await apiFetch("/api/user/confirmed-two-factor-authentication", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function getRecoveryCodes(): Promise<string[]> {
+  const response = await apiFetch("/api/user/two-factor-recovery-codes");
+  return response.json();
+}
+
+// Replaces every recovery code with new ones.
+export async function regenerateRecoveryCodes(): Promise<string[]> {
+  await apiFetch("/api/user/two-factor-recovery-codes", { method: "POST" });
+  return getRecoveryCodes();
+}
+
+export async function disableTwoFactor(): Promise<void> {
+  await apiFetch("/api/user/two-factor-authentication", { method: "DELETE" });
 }
 
 export async function logout(): Promise<void> {
