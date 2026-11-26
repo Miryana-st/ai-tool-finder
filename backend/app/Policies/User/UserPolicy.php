@@ -23,6 +23,23 @@ class UserPolicy
     }
 
     /**
+     * Determine whether the user can see the given user's details.
+     */
+    public function view(User $user, User $target): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can change the given user's name, email,
+     * company role and password. Users change their own from the profile.
+     */
+    public function update(User $user, User $target): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
      * Determine whether the user can change the system role of the given user.
      */
     public function updateSystemRole(User $user, User $target): bool

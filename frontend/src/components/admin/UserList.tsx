@@ -25,7 +25,7 @@ type Message = { type: "success" | "error"; text: string };
 
 // Admin list of users. The filters live in the URL query, like the tool list.
 export default function UserList() {
-  const { user: currentUser, refreshUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -125,65 +125,6 @@ export default function UserList() {
     return () => controller.abort();
   }, [query, urlSearch, systemRole, companyRole, page, reloadKey]);
 
-  const replaceUser = (updated: User) =>
-    setUsers((current) =>
-      current?.status === "ready"
-        ? {
-            ...current,
-            result: {
-              ...current.result,
-              data: current.result.data.map((user) => (user.id === updated.id ? updated : user)),
-            },
-          }
-        : current,
-    );
-
-  const toggleAdmin = async (user: User) => {
-    const makeAdmin = user.system_role !== "admin";
-    const isSelf = user.id === currentUser?.id;
-
-    const question = makeAdmin
-      ? `Да направя ли ${user.name} администратор?`
-      : isSelf
-        ? "Да махна ли твоята admin роля? Ще загубиш достъп до админ страниците."
-        : `Да махна ли admin ролята на ${user.name}?`;
-
-    if (!window.confirm(question)) {
-      return;
-    }
-
-    setBusyId(user.id);
-    setMessage(null);
-
-    try {
-      const updated = await api.updateUserSystemRole(user.id, makeAdmin ? "admin" : "user");
-
-      // This page is for admins only. Loading the user again also hides the admin menu.
-      if (isSelf && !makeAdmin) {
-        await refreshUser();
-        router.push("/dashboard");
-        return;
-      }
-
-      replaceUser(updated);
-      setMessage({
-        type: "success",
-        text: makeAdmin
-          ? `${updated.name} вече е администратор.`
-          : `${updated.name} вече не е администратор.`,
-      });
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 422) {
-        setMessage({ type: "error", text: api.fieldError(error.errors, "system_role") ?? error.message });
-      } else {
-        console.error("Could not change the system role.", error);
-        setMessage({ type: "error", text: "Действието не беше успешно. Опитай отново." });
-      }
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   const deleteUser = async (user: User) => {
     if (!window.confirm(`Да изтрия ли акаунта на ${user.name} (${user.email})? Това действие е необратимо.`)) {
       return;
@@ -214,55 +155,12 @@ export default function UserList() {
     }
   };
 
-  const resetTwoFactor = async (user: User) => {
-    if (
-      !window.confirm(
-        `Да изключа ли двуфакторната защита на ${user.name}? Ще може да влезе само с парола и да я включи отново от профила си.`,
-      )
-    ) {
-      return;
-    }
-
-    setBusyId(user.id);
-    setMessage(null);
-
-    try {
-      replaceUser(await api.resetUserTwoFactor(user.id));
-      setMessage({ type: "success", text: `Двуфакторната защита на ${user.name} е изключена.` });
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        setMessage({ type: "error", text: `Акаунтът на ${user.name} вече е изтрит.` });
-        setReloadKey((key) => key + 1);
-      } else {
-        console.error("Could not turn off two-factor authentication.", error);
-        setMessage({ type: "error", text: "Действието не беше успешно. Опитай отново." });
-      }
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   const renderActions = (user: User) => (
     <>
-      <button
-        type="button"
-        onClick={() => void toggleAdmin(user)}
-        disabled={busyId !== null}
-        className={secondaryButtonClassName}
-      >
-        {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
-      </button>
-      {/* Admins turn off their own two-factor from the profile (the backend refuses here). */}
-      {user.two_factor_enabled && user.id !== currentUser?.id && (
-        <button
-          type="button"
-          onClick={() => void resetTwoFactor(user)}
-          disabled={busyId !== null}
-          className={secondaryButtonClassName}
-        >
-          Изключи 2FA
-        </button>
-      )}
+      {/* Details, a new password, the admin role and two-factor are changed on the user's page. */}
+      <Link href={`/admin/users/${user.id}`} className={secondaryButtonClassName}>
+        Редактирай
+      </Link>
       {/* Admins cannot delete their own account (the backend refuses too). */}
       {user.id !== currentUser?.id && (
         <button

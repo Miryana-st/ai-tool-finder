@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User\User;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -48,21 +47,20 @@ class ApiOnlyBackendTest extends TestCase
             ->assertExactJson(['message' => 'Unauthenticated.']);
     }
 
-    public function test_password_reset_link_points_to_the_frontend(): void
+    public function test_there_is_no_forgotten_password_reset(): void
     {
+        // Users change the password in their profile; admins set it for them.
         Notification::fake();
-        config(['app.frontend_url' => 'http://frontend.test']);
+        User::factory()->create(['email' => 'reset@ai-finder.test']);
 
-        $user = User::factory()->create(['email' => 'reset@ai-finder.test']);
+        $this->postJson('/api/forgot-password', ['email' => 'reset@ai-finder.test'])->assertNotFound();
+        $this->postJson('/api/reset-password', [
+            'token' => 'any',
+            'email' => 'reset@ai-finder.test',
+            'password' => 'N3w-Str0ng-Passw0rd!',
+            'password_confirmation' => 'N3w-Str0ng-Passw0rd!',
+        ])->assertNotFound();
 
-        $this->postJson('/api/forgot-password', ['email' => 'reset@ai-finder.test'])->assertOk();
-
-        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
-            $url = $notification->toMail($user)->actionUrl;
-
-            return str_starts_with($url, 'http://frontend.test/reset-password?')
-                && str_contains($url, 'token='.$notification->token)
-                && str_contains($url, 'email='.urlencode('reset@ai-finder.test'));
-        });
+        Notification::assertNothingSent();
     }
 }
