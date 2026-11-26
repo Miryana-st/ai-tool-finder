@@ -9,6 +9,7 @@ use App\Http\Controllers\Tool\ToolImageController;
 use App\Http\Controllers\User\CompanyRoleController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\User\UserSystemRoleController;
+use App\Http\Controllers\User\UserTwoFactorController;
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::patch('/users/{user}/system-role', UserSystemRoleController::class)
         ->name('api.users.system-role.update');
+
+    Route::delete('/users/{user}/two-factor-authentication', [UserTwoFactorController::class, 'destroy'])
+        ->name('api.users.two-factor.destroy');
 
     Route::get('/tools', [ToolController::class, 'index'])->name('api.tools.index');
     Route::post('/tools', [ToolController::class, 'store'])->name('api.tools.store');

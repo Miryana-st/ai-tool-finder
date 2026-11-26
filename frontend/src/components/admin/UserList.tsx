@@ -214,6 +214,34 @@ export default function UserList() {
     }
   };
 
+  const resetTwoFactor = async (user: User) => {
+    if (
+      !window.confirm(
+        `Да изключа ли двуфакторната защита на ${user.name}? Ще може да влезе само с парола и да я включи отново от профила си.`,
+      )
+    ) {
+      return;
+    }
+
+    setBusyId(user.id);
+    setMessage(null);
+
+    try {
+      replaceUser(await api.resetUserTwoFactor(user.id));
+      setMessage({ type: "success", text: `Двуфакторната защита на ${user.name} е изключена.` });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        setMessage({ type: "error", text: `Акаунтът на ${user.name} вече е изтрит.` });
+        setReloadKey((key) => key + 1);
+      } else {
+        console.error("Could not turn off two-factor authentication.", error);
+        setMessage({ type: "error", text: "Действието не беше успешно. Опитай отново." });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const renderActions = (user: User) => (
     <>
       <button
@@ -224,6 +252,17 @@ export default function UserList() {
       >
         {user.system_role === "admin" ? "Махни admin" : "Направи admin"}
       </button>
+      {/* Admins turn off their own two-factor from the profile (the backend refuses here). */}
+      {user.two_factor_enabled && user.id !== currentUser?.id && (
+        <button
+          type="button"
+          onClick={() => void resetTwoFactor(user)}
+          disabled={busyId !== null}
+          className={secondaryButtonClassName}
+        >
+          Изключи 2FA
+        </button>
+      )}
       {/* Admins cannot delete their own account (the backend refuses too). */}
       {user.id !== currentUser?.id && (
         <button
