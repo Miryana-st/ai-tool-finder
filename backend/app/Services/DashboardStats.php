@@ -16,9 +16,10 @@ class DashboardStats
     /**
      * Get the dashboard numbers for the user.
      *
-     * Deleted tools are not counted. Popular categories are the approved
+     * Deleted and pending tools are not counted. Popular categories are the approved
      * categories with the most tools; categories without tools are left out.
-     * `favorite_tools` counts the tools the user marked as favorite.
+     * `favorite_tools` counts the tools the user marked as favorite and can see
+     * (approved ones and the user's own pending ones).
      *
      * @return array{
      *     tools_total: int,
@@ -30,9 +31,9 @@ class DashboardStats
     public function for(User $user): array
     {
         return [
-            'tools_total' => Tool::count(),
-            'tools_for_company_role' => Tool::whereRelation('companyRoles', 'company_roles.id', $user->company_role_id)->count(),
-            'favorite_tools' => $user->favoriteTools()->count(),
+            'tools_total' => Tool::approved()->count(),
+            'tools_for_company_role' => Tool::approved()->whereRelation('companyRoles', 'company_roles.id', $user->company_role_id)->count(),
+            'favorite_tools' => $user->favoriteTools()->visibleTo($user)->count(),
             'popular_categories' => $this->popularCategories(),
         ];
     }
@@ -43,8 +44,8 @@ class DashboardStats
     private function popularCategories(): array
     {
         return Category::approved()
-            ->whereHas('tools')
-            ->withCount('tools')
+            ->whereHas('tools', fn ($query) => $query->approved())
+            ->withCount(['tools' => fn ($query) => $query->approved()])
             ->orderByDesc('tools_count')
             ->orderBy('name')
             ->limit(self::POPULAR_CATEGORIES_LIMIT)

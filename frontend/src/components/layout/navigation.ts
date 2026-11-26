@@ -19,6 +19,7 @@ export type AdminNavItem = { label: string; href: string };
 // guards the pages themselves; this list only decides what the sidebar shows.
 export const ADMIN_NAV: AdminNavItem[] = [
   { label: "Потребители", href: "/admin/users" },
+  { label: "Чакащи инструменти", href: "/admin/pending-tools" },
   { label: "Длъжности", href: "/admin/company-roles" },
   { label: "Категории", href: "/admin/categories" },
   { label: "Тагове", href: "/admin/tags" },

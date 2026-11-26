@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Tool\Tool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
- * The signed-in user's favorite tools. Every user may mark any tool, and both
- * actions can be repeated safely.
+ * The signed-in user's favorite tools. Every user may mark any tool they can
+ * see (a pending tool only its creator and admins), and both actions can be
+ * repeated safely.
  */
 class FavoriteToolController extends Controller
 {
@@ -18,6 +20,8 @@ class FavoriteToolController extends Controller
      */
     public function store(Request $request, Tool $tool): JsonResponse
     {
+        Gate::authorize('view', $tool);
+
         $request->user()->favoriteTools()->syncWithoutDetaching([$tool->id]);
 
         return $this->favoriteInfo($request, $tool);

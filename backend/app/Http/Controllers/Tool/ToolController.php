@@ -34,7 +34,8 @@ class ToolController extends Controller
     /**
      * List tools, newest first, filtered by name, company role, category and tag,
      * with `favorites` only the signed-in user's favorite tools and with `mine`
-     * only the tools the signed-in user added.
+     * only the tools the signed-in user added. Pending tools are listed only
+     * for their creator.
      */
     public function index(IndexToolRequest $request): AnonymousResourceCollection
     {
@@ -43,6 +44,7 @@ class ToolController extends Controller
         $tools = Tool::query()
             ->with(self::RELATIONS)
             ->withFavoriteInfo($user)
+            ->visibleTo($user)
             ->filter($request->validated())
             ->when($request->boolean('favorites'), fn ($query) => $query->favoriteOf($user))
             ->when($request->boolean('mine'), fn ($query) => $query->whereBelongsTo($user))
@@ -55,11 +57,63 @@ class ToolController extends Controller
     }
 
     /**
-     * Show a tool, found by its slug.
+     * Show a tool, found by its slug. A pending tool only to its creator and admins.
      */
     public function show(Request $request, Tool $tool): ToolResource
     {
+        Gate::authorize('view', $tool);
+
         return $this->toolResource($tool, $request->user());
+    }
+
+    /**
+     * List the tools waiting for an admin, oldest first.
+     */
+    public function pending(Request $request): AnonymousResourceCollection
+    {
+        Gate::authorize('viewPending', Tool::class);
+
+        $tools = Tool::pending()
+            ->with(self::RELATIONS)
+            ->withFavoriteInfo($request->user())
+            ->oldest()
+            ->oldest('id')
+            ->get();
+
+        return ToolResource::collection($tools);
+    }
+
+    /**
+     * Approve a pending tool, so everybody can see it.
+     */
+    public function approve(Request $request, Tool $tool): ToolResource|JsonResponse
+    {
+        Gate::authorize('approve', $tool);
+
+        if ($tool->isApproved()) {
+            return $this->alreadyApproved();
+        }
+
+        $tool->approved_at = now();
+        $tool->save();
+
+        return $this->toolResource($tool, $request->user());
+    }
+
+    /**
+     * Reject a pending tool: it is deleted (soft, like any deleted tool).
+     */
+    public function reject(Tool $tool): JsonResponse|Response
+    {
+        Gate::authorize('reject', $tool);
+
+        if ($tool->isApproved()) {
+            return $this->alreadyApproved();
+        }
+
+        $tool->delete();
+
+        return response()->noContent();
     }
 
     /**
@@ -92,6 +146,16 @@ class ToolController extends Controller
         $tool->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Approved tools are not pending any more and cannot be decided on again.
+     */
+    private function alreadyApproved(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'The tool is already approved.',
+        ], Response::HTTP_CONFLICT);
     }
 
     /**

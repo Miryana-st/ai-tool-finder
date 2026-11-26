@@ -45,13 +45,13 @@ class TagController extends Controller
 
     /**
      * List every approved tag by name, each with the number of its tools
-     * (deleted tools are not counted). For the admin tag management page.
+     * (deleted and pending tools are not counted). For the admin tag management page.
      */
     public function all(): AnonymousResourceCollection
     {
         Gate::authorize('viewAll', Tag::class);
 
-        return TagResource::collection(Tag::approved()->withCount('tools')->orderBy('name')->get());
+        return TagResource::collection(Tag::approved()->withCount(['tools' => fn ($query) => $query->approved()])->orderBy('name')->get());
     }
 
     /**
@@ -61,7 +61,7 @@ class TagController extends Controller
     {
         $tag->update($request->validated());
 
-        return new TagResource($tag->loadCount('tools'));
+        return new TagResource($tag->loadCount(['tools' => fn ($query) => $query->approved()]));
     }
 
     /**
