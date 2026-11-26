@@ -65,7 +65,7 @@ export default function AppBreadcrumbs() {
   });
 
   return (
-    <Breadcrumb className="mb-6">
+    <Breadcrumb className="mb-6 max-md:hidden">
       <BreadcrumbList>
         <BreadcrumbItem>
           <Link href={HOME_HREF} aria-label="Табло" className={breadcrumbLinkClassName}>

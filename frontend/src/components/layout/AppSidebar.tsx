@@ -23,19 +23,10 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import UserAvatar from "./UserAvatar";
 import LogoMark from "./LogoMark";
-import { ADMIN_NAV, MAIN_NAV, type NavItem } from "./navigation";
+import { activeHref, ADMIN_NAV, MAIN_NAV, type NavItem } from "./navigation";
 
 const menuButtonClassName =
   "h-11 gap-3 px-3 text-[15px] data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-md [&_svg]:size-5";
-
-// The most specific href that contains the current page, so /tools/new does not also mark /tools.
-function activeHref(pathname: string, hrefs: string[]): string | null {
-  return (
-    hrefs
-      .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
-      .sort((a, b) => b.length - a.length)[0] ?? null
-  );
-}
 
 export default function AppSidebar() {
   const pathname = usePathname();

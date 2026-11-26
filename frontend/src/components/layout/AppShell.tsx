@@ -8,6 +8,7 @@ import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import AppBreadcrumbs from "./AppBreadcrumbs";
 import AppSidebar from "./AppSidebar";
 import AppTopbar from "./AppTopbar";
+import MobileNav from "./MobileNav";
 
 // Logged-in users get the sidebar layout; guests (and the session check) the simple header.
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <AppSidebar />
         <SidebarInset>
           <AppTopbar />
+          <MobileNav />
           <div className="w-full flex-1 px-4 py-8 md:px-8">
             <AppBreadcrumbs />
             {children}
