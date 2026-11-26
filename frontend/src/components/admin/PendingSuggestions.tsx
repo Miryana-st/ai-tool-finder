@@ -31,6 +31,10 @@ const TEXT: Record<SuggestionKind, { intro: string; approved: (name: string) => 
 
 const dateFormat = new Intl.DateTimeFormat("bg-BG", { dateStyle: "medium", timeStyle: "short" });
 
+// The white card of the admin forms (as the "Нова категория" form).
+const cardClassName =
+  "rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950";
+
 // Category or tag suggestions waiting for an admin. Use it inside AdminOnly.
 export default function PendingSuggestions({
   kind,
@@ -107,7 +111,7 @@ export default function PendingSuggestions({
   };
 
   return (
-    <section aria-labelledby={`pending-${kind}`} className="flex flex-col gap-4">
+    <section aria-labelledby={`pending-${kind}`} className={`flex flex-col gap-4 ${cardClassName}`}>
       <div className="flex flex-col gap-1">
         <h2 id={`pending-${kind}`} className="text-lg font-semibold">
           Чакащи предложения
@@ -141,7 +145,7 @@ export default function PendingSuggestions({
           {pageItems.map((suggestion) => (
             <li
               key={suggestion.id}
-              className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+              className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
             >
               <div className="flex flex-col gap-1">
                 <p className="flex flex-wrap items-center gap-2 font-medium">

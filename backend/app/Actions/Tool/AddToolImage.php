@@ -2,15 +2,20 @@
 
 namespace App\Actions\Tool;
 
+use App\Enums\Activity\ActivityEvent;
 use App\Models\Tool\Tool;
 use App\Models\Tool\ToolImage;
+use App\Services\ActivityLogger;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
 
 class AddToolImage
 {
+    public function __construct(private readonly ActivityLogger $activity) {}
+
     /**
      * Store the screenshot on the public disk and add it after the tool's other images.
      * If the record cannot be saved, the stored file is removed again.
@@ -24,11 +29,19 @@ class AddToolImage
         }
 
         try {
-            return $tool->images()->create([
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'sort_order' => (int) $tool->images()->max('sort_order') + 1,
-            ]);
+            return DB::transaction(function () use ($tool, $file, $path) {
+                $image = $tool->images()->create([
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'sort_order' => (int) $tool->images()->max('sort_order') + 1,
+                ]);
+
+                $this->activity->log(ActivityEvent::ToolImageAdded, $tool, properties: [
+                    'image' => $image->original_name,
+                ]);
+
+                return $image;
+            });
         } catch (Throwable $exception) {
             Storage::disk('public')->delete($path);
 

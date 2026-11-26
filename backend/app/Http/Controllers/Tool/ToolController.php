@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tool;
 
 use App\Actions\Tool\CreateTool;
 use App\Actions\Tool\UpdateTool;
+use App\Enums\Activity\ActivityEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\IndexToolRequest;
 use App\Http\Requests\Tool\StoreToolRequest;
@@ -11,10 +12,12 @@ use App\Http\Requests\Tool\UpdateToolRequest;
 use App\Http\Resources\Tool\ToolResource;
 use App\Models\Tool\Tool;
 use App\Models\User\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ToolController extends Controller
@@ -32,10 +35,13 @@ class ToolController extends Controller
     private const array RELATIONS = ['user:id,name', 'categories', 'tags', 'companyRoles', 'images'];
 
     /**
-     * List tools, newest first, filtered by name, company role, category and tag,
-     * with `favorites` only the signed-in user's favorite tools and with `mine`
+     * List tools, filtered by name, company role, category and tag, with
+     * `favorites` only the signed-in user's favorite tools and with `mine`
      * only the tools the signed-in user added. Pending tools are listed only
      * for their creator.
+     *
+     * The most favorited tools come first, then by name; the user's own
+     * favorites (`favorites`) stay newest first.
      */
     public function index(IndexToolRequest $request): AnonymousResourceCollection
     {
@@ -48,8 +54,11 @@ class ToolController extends Controller
             ->filter($request->validated())
             ->when($request->boolean('favorites'), fn ($query) => $query->favoriteOf($user))
             ->when($request->boolean('mine'), fn ($query) => $query->whereBelongsTo($user))
-            ->latest()
-            ->latest('id')
+            ->when(
+                $request->boolean('favorites'),
+                fn ($query) => $query->latest()->latest('id'),
+                fn ($query) => $query->orderByDesc('favorites_count')->orderBy('name')->orderBy('id'),
+            )
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
@@ -86,7 +95,7 @@ class ToolController extends Controller
     /**
      * Approve a pending tool, so everybody can see it.
      */
-    public function approve(Request $request, Tool $tool): ToolResource|JsonResponse
+    public function approve(Request $request, Tool $tool, ActivityLogger $activity): ToolResource|JsonResponse
     {
         Gate::authorize('approve', $tool);
 
@@ -94,8 +103,12 @@ class ToolController extends Controller
             return $this->alreadyApproved();
         }
 
-        $tool->approved_at = now();
-        $tool->save();
+        DB::transaction(function () use ($tool, $activity) {
+            $tool->approved_at = now();
+            $tool->save();
+
+            $activity->log(ActivityEvent::ToolApproved, $tool, properties: ['creator' => $tool->user()->value('name')]);
+        });
 
         return $this->toolResource($tool, $request->user());
     }
@@ -103,7 +116,7 @@ class ToolController extends Controller
     /**
      * Reject a pending tool: it is deleted (soft, like any deleted tool).
      */
-    public function reject(Tool $tool): JsonResponse|Response
+    public function reject(Tool $tool, ActivityLogger $activity): JsonResponse|Response
     {
         Gate::authorize('reject', $tool);
 
@@ -111,7 +124,11 @@ class ToolController extends Controller
             return $this->alreadyApproved();
         }
 
-        $tool->delete();
+        DB::transaction(function () use ($tool, $activity) {
+            $activity->log(ActivityEvent::ToolRejected, $tool, properties: ['creator' => $tool->user()->value('name')]);
+
+            $tool->delete();
+        });
 
         return response()->noContent();
     }
@@ -139,11 +156,15 @@ class ToolController extends Controller
     /**
      * Soft delete a tool.
      */
-    public function destroy(Tool $tool): Response
+    public function destroy(Tool $tool, ActivityLogger $activity): Response
     {
         Gate::authorize('delete', $tool);
 
-        $tool->delete();
+        DB::transaction(function () use ($tool, $activity) {
+            $activity->log(ActivityEvent::ToolDeleted, $tool, properties: ['creator' => $tool->user()->value('name')]);
+
+            $tool->delete();
+        });
 
         return response()->noContent();
     }

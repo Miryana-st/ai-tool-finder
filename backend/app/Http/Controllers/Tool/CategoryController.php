@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Tool;
 
 use App\Actions\Tool\SaveSuggestion;
+use App\Enums\Activity\ActivityEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreCategoryRequest;
 use App\Http\Requests\Tool\UpdateCategoryRequest;
 use App\Http\Resources\Tool\CategoryResource;
 use App\Models\Tool\Category;
+use App\Services\ActivityLogger;
 use App\Services\CatalogCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class CategoryController extends Controller
@@ -31,9 +34,18 @@ class CategoryController extends Controller
     /**
      * Rename a category or change its description. The slug stays.
      */
-    public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
+    public function update(UpdateCategoryRequest $request, Category $category, ActivityLogger $activity): CategoryResource
     {
-        $category->update($request->validated());
+        DB::transaction(function () use ($request, $category, $activity) {
+            $before = $category->only(['name', 'description']);
+            $category->update($request->validated());
+
+            $changes = $activity->diff($before, $category->only(['name', 'description']));
+
+            if ($changes !== []) {
+                $activity->log(ActivityEvent::CategoryUpdated, $category, $changes);
+            }
+        });
 
         return new CategoryResource($category->loadCount(['tools' => fn ($query) => $query->approved()]));
     }
@@ -41,11 +53,15 @@ class CategoryController extends Controller
     /**
      * Delete a category, approved or not. Tools keep their other categories.
      */
-    public function destroy(Category $category): Response
+    public function destroy(Category $category, ActivityLogger $activity): Response
     {
         Gate::authorize('delete', $category);
 
-        $category->delete();
+        DB::transaction(function () use ($category, $activity) {
+            $activity->log(ActivityEvent::CategoryDeleted, $category, $activity->deleted($category->only(['name', 'slug', 'description'])));
+
+            $category->delete();
+        });
 
         return response()->noContent();
     }
@@ -62,7 +78,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * List the suggestions waiting for an admin, oldest first.
+     * List the suggestions waiting for an admin, by name.
      */
     public function pending(): AnonymousResourceCollection
     {
@@ -70,8 +86,8 @@ class CategoryController extends Controller
 
         $categories = Category::pending()
             ->with('suggestedBy:id,name')
-            ->oldest()
-            ->oldest('id')
+            ->orderBy('name')
+            ->orderBy('id')
             ->get();
 
         return CategoryResource::collection($categories);
@@ -80,7 +96,7 @@ class CategoryController extends Controller
     /**
      * Approve a suggestion, so users can pick it.
      */
-    public function approve(Category $category): CategoryResource|JsonResponse
+    public function approve(Category $category, ActivityLogger $activity): CategoryResource|JsonResponse
     {
         Gate::authorize('approve', $category);
 
@@ -88,8 +104,14 @@ class CategoryController extends Controller
             return $this->alreadyApproved();
         }
 
-        $category->approved_at = now();
-        $category->save();
+        DB::transaction(function () use ($category, $activity) {
+            $category->approved_at = now();
+            $category->save();
+
+            $activity->log(ActivityEvent::CategoryApproved, $category, properties: [
+                'suggested_by' => $category->suggestedBy()->value('name'),
+            ]);
+        });
 
         return new CategoryResource($category);
     }
@@ -97,7 +119,7 @@ class CategoryController extends Controller
     /**
      * Reject a suggestion: it is deleted, so the name can be suggested again.
      */
-    public function reject(Category $category): JsonResponse|Response
+    public function reject(Category $category, ActivityLogger $activity): JsonResponse|Response
     {
         Gate::authorize('reject', $category);
 
@@ -105,7 +127,13 @@ class CategoryController extends Controller
             return $this->alreadyApproved();
         }
 
-        $category->delete();
+        DB::transaction(function () use ($category, $activity) {
+            $activity->log(ActivityEvent::CategoryRejected, $category, properties: [
+                'suggested_by' => $category->suggestedBy()->value('name'),
+            ]);
+
+            $category->delete();
+        });
 
         return response()->noContent();
     }

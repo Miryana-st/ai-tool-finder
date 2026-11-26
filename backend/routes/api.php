@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Activity\ActivityLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tool\CategoryController;
 use App\Http\Controllers\Tool\FavoriteToolController;
@@ -51,6 +52,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::delete('/users/{user}/two-factor-authentication', [UserTwoFactorController::class, 'destroy'])
             ->name('api.users.two-factor.destroy');
+
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+            ->name('api.activity-logs.index');
+
+        Route::get('/activity-logs/events', [ActivityLogController::class, 'events'])
+            ->name('api.activity-logs.events');
     });
 
     Route::get('/tools', [ToolController::class, 'index'])->name('api.tools.index');

@@ -114,6 +114,8 @@ function Manager({ kind }: { kind: SuggestionKind }) {
         }}
       />
 
+      <PendingSuggestions kind={kind} onApproved={addItem} />
+
       {message && (
         <p
           role={message.type === "error" ? "alert" : "status"}
@@ -153,8 +155,6 @@ function Manager({ kind }: { kind: SuggestionKind }) {
           />
         )}
       </div>
-
-      <PendingSuggestions kind={kind} onApproved={addItem} />
     </section>
   );
 }
