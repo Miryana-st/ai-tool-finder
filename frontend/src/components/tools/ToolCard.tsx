@@ -1,68 +1,150 @@
+"use client";
+
+import { ArrowRight, Heart } from "lucide-react";
 import Link from "next/link";
-import type { Tool } from "@/lib/api";
+import { useState } from "react";
+import { buttonVariants } from "@/components/ui/button";
+import * as api from "@/lib/api";
+import type { FavoriteInfo, Tool } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { markdownToPlainText } from "./Markdown";
-import { chipClassName, mutedTextClassName } from "@/styles/classNames";
+
+const MAX_CHIPS = 3;
+
+const chipBaseClassName = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium";
 
 export default function ToolCard({ tool }: { tool: Tool }) {
-  const thumbnail = tool.images[0];
+  const logo = tool.images[0];
+  const [favorite, setFavorite] = useState<FavoriteInfo>({
+    is_favorite: tool.is_favorite,
+    favorites_count: tool.favorites_count,
+  });
+
+  const chips = [
+    ...tool.categories.map((category) => ({ key: `category-${category.id}`, label: category.name, accent: true })),
+    ...tool.company_roles.map((role) => ({ key: `role-${role.id}`, label: role.name, accent: false })),
+  ];
+  const hiddenChips = chips.length - MAX_CHIPS;
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <Link href={`/tools/${tool.slug}`} className="block aspect-video bg-zinc-100 dark:bg-zinc-900">
-        {thumbnail ? (
-          // Uploaded files come from /storage, outside the Next.js image pipeline.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnail.url}
-            alt={`Скрийншот на ${tool.name}`}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className={`flex h-full items-center justify-center text-sm ${mutedTextClassName}`}>
-            Няма изображение
-          </span>
-        )}
-      </Link>
+    <article className="group relative flex h-full flex-col gap-4 rounded-2xl border bg-card p-5 text-card-foreground shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <Link href={`/tools/${tool.slug}`} tabIndex={-1} aria-hidden="true">
+          {logo ? (
+            // Uploaded files come from /storage, outside the Next.js image pipeline.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo.url} alt="" className="size-16 rounded-2xl border bg-muted object-cover shadow-sm" />
+          ) : (
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-linear-to-br from-violet-500 to-indigo-600 text-3xl font-bold text-white shadow-sm">
+              {tool.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </Link>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <h2 className="text-lg font-semibold">
-          <Link href={`/tools/${tool.slug}`} className="hover:text-indigo-600">
+        <FavoriteToggle toolId={tool.id} toolName={tool.name} favorite={favorite} onChange={setFavorite} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <h2 className="text-lg font-bold tracking-tight">
+          <Link href={`/tools/${tool.slug}`} className="hover:text-violet-700 dark:hover:text-violet-300">
             {tool.name}
           </Link>
         </h2>
+        <p className="line-clamp-2 text-sm text-muted-foreground">{markdownToPlainText(tool.description)}</p>
+      </div>
 
-        <p className={`line-clamp-3 text-sm ${mutedTextClassName}`}>
-          {markdownToPlainText(tool.description)}
-        </p>
+      {chips.length > 0 && (
+        <ul aria-label="Категории и роли" className="flex flex-wrap gap-1.5">
+          {chips.slice(0, MAX_CHIPS).map((chip) => (
+            <li
+              key={chip.key}
+              className={cn(
+                chipBaseClassName,
+                chip.accent
+                  ? "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
+                  : "border bg-muted/50 text-muted-foreground",
+              )}
+            >
+              {chip.label}
+            </li>
+          ))}
+          {hiddenChips > 0 && (
+            <li className={cn(chipBaseClassName, "border bg-muted/50 text-muted-foreground")}>+{hiddenChips}</li>
+          )}
+        </ul>
+      )}
 
-        <TermList label="Категории" items={tool.categories.map((category) => category.name)} />
-        <TermList label="Роли" items={tool.company_roles.map((role) => role.name)} />
+      <div className="mt-auto flex items-center justify-between gap-3 pt-1">
+        <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Heart className="size-4 fill-rose-500 text-rose-500" aria-hidden="true" />
+          <span>
+            <span>Любим на </span><span className="font-semibold text-foreground">{favorite.favorites_count}</span> потребител/я
+          </span>
+        </span>
 
-        {tool.tags.length > 0 && (
-          <ul aria-label="Тагове" className="mt-auto flex flex-wrap gap-1">
-            {tool.tags.map((tag) => (
-              <li key={tag.id}>
-                <Link href={`/tools?tag=${encodeURIComponent(tag.slug)}`} className={`${chipClassName} hover:text-indigo-600`}>
-                  #{tag.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <Link
+          href={`/tools/${tool.slug}`}
+          className={cn(
+            buttonVariants({ size: "sm" }),
+            "h-8 rounded-lg bg-violet-600 px-3 text-white hover:bg-violet-700",
+          )}
+        >
+          Детайли
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </Link>
       </div>
     </article>
   );
 }
 
-function TermList({ label, items }: { label: string; items: string[] }) {
-  if (items.length === 0) {
-    return null;
-  }
+function FavoriteToggle({
+  toolId,
+  toolName,
+  favorite,
+  onChange,
+}: {
+  toolId: number;
+  toolName: string;
+  favorite: FavoriteInfo;
+  onChange: (favorite: FavoriteInfo) => void;
+}) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const handleClick = async () => {
+    setIsSaving(true);
+    setHasError(false);
+
+    try {
+      onChange(await api.setToolFavorite(toolId, !favorite.is_favorite));
+    } catch (caught) {
+      console.error("Could not change the favorite tool.", caught);
+      setHasError(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const label = favorite.is_favorite ? `Премахни ${toolName} от любими` : `Добави ${toolName} в любими`;
 
   return (
-    <p className="text-sm">
-      <span className="font-medium">{label}:</span>{" "}
-      <span className={mutedTextClassName}>{items.join(", ")}</span>
-    </p>
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={() => void handleClick()}
+        disabled={isSaving}
+        aria-pressed={favorite.is_favorite}
+        aria-label={label}
+        title={label}
+        className="flex size-9 items-center justify-center rounded-full text-violet-500 transition-colors hover:bg-violet-50 disabled:opacity-60 dark:hover:bg-violet-500/10"
+      >
+        <Heart className={cn("size-5", favorite.is_favorite && "fill-rose-500 text-rose-500")} />
+      </button>
+      {hasError && (
+        <p role="alert" className="text-xs text-red-600">
+          Неуспешно. Опитай пак.
+        </p>
+      )}
+    </div>
   );
 }

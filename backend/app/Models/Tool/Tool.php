@@ -141,11 +141,11 @@ class Tool extends Model
     }
 
     /**
-     * Filter tools by name and by the slugs of a company role, category and tag.
-     * Empty filters are ignored.
+     * Filter tools by name, by the slugs of a company role and category, and by
+     * tag slugs: a tool must have every given tag. Empty filters are ignored.
      *
      * @param  Builder<Tool>  $query
-     * @param  array{search?: ?string, company_role?: ?string, category?: ?string, tag?: ?string}  $filters
+     * @param  array{search?: ?string, company_role?: ?string, category?: ?string, tags?: ?list<string>}  $filters
      */
     #[Scope]
     protected function filter(Builder $query, array $filters): void
@@ -153,8 +153,11 @@ class Tool extends Model
         $query
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->whereLike('name', '%'.$search.'%'))
             ->when($filters['company_role'] ?? null, fn (Builder $query, string $slug) => $query->whereRelation('companyRoles', 'slug', $slug))
-            ->when($filters['category'] ?? null, fn (Builder $query, string $slug) => $query->whereRelation('categories', 'slug', $slug))
-            ->when($filters['tag'] ?? null, fn (Builder $query, string $slug) => $query->whereRelation('tags', 'slug', $slug));
+            ->when($filters['category'] ?? null, fn (Builder $query, string $slug) => $query->whereRelation('categories', 'slug', $slug));
+
+        foreach (array_unique($filters['tags'] ?? []) as $slug) {
+            $query->whereRelation('tags', 'slug', $slug);
+        }
     }
 
     /**
