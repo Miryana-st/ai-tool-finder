@@ -418,6 +418,13 @@ export async function updateProfileInformation(input: { name: string; email: str
   });
 }
 
+// Admin only, for another user (e.g. one who lost their phone). Safe to repeat.
+export async function resetUserTwoFactor(id: number): Promise<User> {
+  const response = await apiFetch(`/api/users/${id}/two-factor-authentication`, { method: "DELETE" });
+  const body: { data: User } = await response.json();
+  return body.data;
+}
+
 export async function updateUserSystemRole(
   id: number,
   systemRole: User["system_role"],
