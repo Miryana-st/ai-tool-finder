@@ -36,6 +36,7 @@ import type { FavoriteInfo, Tool } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import FavoriteButton from "./FavoriteButton";
 import Markdown from "./Markdown";
+import PendingBadge from "./PendingBadge";
 import ToolStateMessage from "./ToolStateMessage";
 import { useTool } from "./useTool";
 import { mutedTextClassName } from "@/styles/classNames";
@@ -126,6 +127,13 @@ function ToolView({ tool }: { tool: Tool }) {
 
           <div className="flex flex-col gap-3">
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{tool.name}</h1>
+
+            {!tool.is_approved && (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
+                <PendingBadge />
+                Ще се вижда от всички след одобрение от администратор.
+              </p>
+            )}
 
             {tool.categories.length > 0 && (
               <ul aria-label="Категории" className="flex flex-wrap gap-2">

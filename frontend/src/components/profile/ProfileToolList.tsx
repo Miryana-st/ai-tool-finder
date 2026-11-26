@@ -4,6 +4,7 @@ import { ArrowRight, Heart, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { markdownToPlainText } from "@/components/tools/Markdown";
+import PendingBadge from "@/components/tools/PendingBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as api from "@/lib/api";
 import type { Tool } from "@/lib/api";
@@ -181,12 +182,15 @@ function ToolRow({
           </Link>
   
           <div className="flex min-w-0 flex-col gap-0.5">
-            <Link
-              href={`/tools/${tool.slug}`}
-              className="truncate font-bold hover:text-violet-700 dark:hover:text-violet-300"
-            >
-              {tool.name}
-            </Link>
+            <div className="flex min-w-0 items-center gap-2">
+              <Link
+                href={`/tools/${tool.slug}`}
+                className="truncate font-bold hover:text-violet-700 dark:hover:text-violet-300"
+              >
+                {tool.name}
+              </Link>
+              {!tool.is_approved && <PendingBadge className="shrink-0" />}
+            </div>
             <p className="truncate text-sm text-muted-foreground">{markdownToPlainText(tool.description)}</p>
           </div>
         </div>

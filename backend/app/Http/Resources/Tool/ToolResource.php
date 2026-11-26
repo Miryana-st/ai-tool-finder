@@ -31,6 +31,8 @@ class ToolResource extends JsonResource
             'description' => $this->description,
             'how_to_use' => $this->how_to_use,
             'examples' => $this->examples,
+            'is_approved' => $this->isApproved(),
+            'approved_at' => $this->approved_at,
             'creator' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

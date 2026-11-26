@@ -41,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/tools', [ToolController::class, 'index'])->name('api.tools.index');
     Route::post('/tools', [ToolController::class, 'store'])->name('api.tools.store');
+    Route::get('/tools/pending', [ToolController::class, 'pending'])->name('api.tools.pending');
+    Route::post('/tools/{tool}/approve', [ToolController::class, 'approve'])->name('api.tools.approve');
+    Route::post('/tools/{tool}/reject', [ToolController::class, 'reject'])->name('api.tools.reject');
     Route::get('/tools/{tool:slug}', [ToolController::class, 'show'])->name('api.tools.show');
     Route::put('/tools/{tool}', [ToolController::class, 'update'])->name('api.tools.update');
     Route::delete('/tools/{tool}', [ToolController::class, 'destroy'])->name('api.tools.destroy');

@@ -26,6 +26,10 @@ use Illuminate\Support\Facades\Storage;
  *
  * `description` and `examples` are Markdown: `examples` can contain links and
  * images, e.g. screenshots uploaded as ToolImage records.
+ *
+ * A tool added by a user waits for an admin: a null `approved_at` marks a
+ * pending tool, which only its creator and admins can see. `approved_at` is
+ * not fillable either: it is set by the code that creates or approves the tool.
  */
 #[Fillable(['name', 'slug', 'url', 'documentation_url', 'description', 'how_to_use', 'examples'])]
 class Tool extends Model
@@ -37,6 +41,63 @@ class Tool extends Model
      * Maximum number of screenshots per tool.
      */
     public const int MAX_IMAGES = 6;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'approved_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Determine if an admin has approved the tool.
+     */
+    public function isApproved(): bool
+    {
+        return $this->approved_at !== null;
+    }
+
+    /**
+     * Only approved tools.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function approved(Builder $query): void
+    {
+        $query->whereNotNull($this->qualifyColumn('approved_at'));
+    }
+
+    /**
+     * Only tools waiting for an admin.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function pending(Builder $query): void
+    {
+        $query->whereNull($this->qualifyColumn('approved_at'));
+    }
+
+    /**
+     * Only the tools the user may see in lists: the approved ones and the
+     * user's own pending ones. Admins see other users' pending tools only in
+     * the list of pending tools.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->whereNotNull($this->qualifyColumn('approved_at'))
+            ->orWhere($this->qualifyColumn('user_id'), $user->getKey()));
+    }
 
     /**
      * Remove the screenshot files when the tool is force deleted. The database

@@ -8,6 +8,7 @@ import * as api from "@/lib/api";
 import type { FavoriteInfo, Tool } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { markdownToPlainText } from "./Markdown";
+import PendingBadge from "./PendingBadge";
 
 const MAX_CHIPS = 3;
 
@@ -50,6 +51,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
             {tool.name}
           </Link>
         </h2>
+        {!tool.is_approved && <PendingBadge className="self-start" />}
         <p className="line-clamp-2 text-sm text-muted-foreground">{markdownToPlainText(tool.description)}</p>
       </div>
 

@@ -17,12 +17,12 @@ class CategoryController extends Controller
 {
     /**
      * List the approved categories (the ones users can pick), each with the
-     * number of its tools (deleted tools are not counted).
+     * number of its tools (deleted and pending tools are not counted).
      */
     public function index(): AnonymousResourceCollection
     {
         return CategoryResource::collection(
-            Category::approved()->withCount('tools')->orderBy('name')->get(),
+            Category::approved()->withCount(['tools' => fn ($query) => $query->approved()])->orderBy('name')->get(),
         );
     }
 
@@ -33,7 +33,7 @@ class CategoryController extends Controller
     {
         $category->update($request->validated());
 
-        return new CategoryResource($category->loadCount('tools'));
+        return new CategoryResource($category->loadCount(['tools' => fn ($query) => $query->approved()]));
     }
 
     /**

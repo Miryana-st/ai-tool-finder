@@ -12,7 +12,7 @@ export type User = {
   company_role_label: string;
 };
 
-// Approved categories with the most tools (deleted tools are not counted).
+// Approved categories with the most tools (deleted and pending tools are not counted).
 export type PopularCategory = {
   id: number;
   name: string;
@@ -49,7 +49,7 @@ export type Category = {
   slug: string;
   description: string | null;
   is_approved: boolean;
-  // Tools with it (deleted tools are not counted); only in the lists of approved ones.
+  // Tools with it (deleted and pending tools are not counted); only in the lists of approved ones.
   tools_count?: number;
   // Only in the admin list of pending suggestions; null if the user was deleted.
   suggested_by?: { id: number; name: string } | null;
@@ -62,7 +62,7 @@ export type Tag = {
   name: string;
   slug: string;
   is_approved: boolean;
-  // Tools with it (deleted tools are not counted); only in the lists of approved ones.
+  // Tools with it (deleted and pending tools are not counted); only in the lists of approved ones.
   tools_count?: number;
   // Only in the admin list of pending suggestions; null if the user was deleted.
   suggested_by?: { id: number; name: string } | null;
@@ -89,6 +89,9 @@ export type Tool = {
   description: string;
   how_to_use: string;
   examples: string | null;
+  // A tool added by a user waits for an admin; until then only its creator and admins see it.
+  is_approved: boolean;
+  approved_at: string | null;
   creator: { id: number; name: string };
   categories: Category[];
   tags: Tag[];
@@ -500,6 +503,23 @@ export async function updateTool(id: number, input: ToolInput): Promise<Tool> {
 
 export async function deleteTool(id: number): Promise<void> {
   await apiFetch(`/api/tools/${id}`, { method: "DELETE" });
+}
+
+// Admin only: the tools waiting for a decision, oldest first.
+export async function getPendingTools(signal?: AbortSignal): Promise<Tool[]> {
+  const response = await apiFetch("/api/tools/pending", { signal });
+  const body: { data: Tool[] } = await response.json();
+  return body.data;
+}
+
+// Admin only. An approved tool is refused (409).
+export async function approveTool(id: number): Promise<void> {
+  await apiFetch(`/api/tools/${id}/approve`, { method: "POST" });
+}
+
+// Admin only. The tool is deleted; an approved one is refused (409).
+export async function rejectTool(id: number): Promise<void> {
+  await apiFetch(`/api/tools/${id}/reject`, { method: "POST" });
 }
 
 // Adding and removing can both be repeated safely; the answer is the current state.

@@ -33,6 +33,15 @@ class ToolFactory extends Factory
             'examples' => fake()->boolean()
                 ? fake()->sentence().' [Пример]('.fake()->url().')'
                 : null,
+            'approved_at' => now(),
         ];
+    }
+
+    /**
+     * A tool waiting for an admin.
+     */
+    public function pending(): static
+    {
+        return $this->state(fn () => ['approved_at' => null]);
     }
 }
