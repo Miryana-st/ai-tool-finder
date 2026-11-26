@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Tool;
 
 use App\Actions\Tool\SaveSuggestion;
+use App\Enums\Activity\ActivityEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tool\StoreTagRequest;
 use App\Http\Requests\Tool\UpdateTagRequest;
 use App\Http\Resources\Tool\TagResource;
 use App\Models\Tool\Tag;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -57,9 +60,18 @@ class TagController extends Controller
     /**
      * Rename a tag. The slug stays.
      */
-    public function update(UpdateTagRequest $request, Tag $tag): TagResource
+    public function update(UpdateTagRequest $request, Tag $tag, ActivityLogger $activity): TagResource
     {
-        $tag->update($request->validated());
+        DB::transaction(function () use ($request, $tag, $activity) {
+            $before = $tag->only(['name']);
+            $tag->update($request->validated());
+
+            $changes = $activity->diff($before, $tag->only(['name']));
+
+            if ($changes !== []) {
+                $activity->log(ActivityEvent::TagUpdated, $tag, $changes);
+            }
+        });
 
         return new TagResource($tag->loadCount(['tools' => fn ($query) => $query->approved()]));
     }
@@ -67,11 +79,15 @@ class TagController extends Controller
     /**
      * Delete a tag, approved or not. Tools keep their other tags.
      */
-    public function destroy(Tag $tag): Response
+    public function destroy(Tag $tag, ActivityLogger $activity): Response
     {
         Gate::authorize('delete', $tag);
 
-        $tag->delete();
+        DB::transaction(function () use ($tag, $activity) {
+            $activity->log(ActivityEvent::TagDeleted, $tag, $activity->deleted($tag->only(['name', 'slug'])));
+
+            $tag->delete();
+        });
 
         return response()->noContent();
     }
@@ -88,7 +104,7 @@ class TagController extends Controller
     }
 
     /**
-     * List the suggestions waiting for an admin, oldest first.
+     * List the suggestions waiting for an admin, by name.
      */
     public function pending(): AnonymousResourceCollection
     {
@@ -96,8 +112,8 @@ class TagController extends Controller
 
         $tags = Tag::pending()
             ->with('suggestedBy:id,name')
-            ->oldest()
-            ->oldest('id')
+            ->orderBy('name')
+            ->orderBy('id')
             ->get();
 
         return TagResource::collection($tags);
@@ -106,7 +122,7 @@ class TagController extends Controller
     /**
      * Approve a suggestion, so users can pick it.
      */
-    public function approve(Tag $tag): TagResource|JsonResponse
+    public function approve(Tag $tag, ActivityLogger $activity): TagResource|JsonResponse
     {
         Gate::authorize('approve', $tag);
 
@@ -114,8 +130,14 @@ class TagController extends Controller
             return $this->alreadyApproved();
         }
 
-        $tag->approved_at = now();
-        $tag->save();
+        DB::transaction(function () use ($tag, $activity) {
+            $tag->approved_at = now();
+            $tag->save();
+
+            $activity->log(ActivityEvent::TagApproved, $tag, properties: [
+                'suggested_by' => $tag->suggestedBy()->value('name'),
+            ]);
+        });
 
         return new TagResource($tag);
     }
@@ -123,7 +145,7 @@ class TagController extends Controller
     /**
      * Reject a suggestion: it is deleted, so the name can be suggested again.
      */
-    public function reject(Tag $tag): JsonResponse|Response
+    public function reject(Tag $tag, ActivityLogger $activity): JsonResponse|Response
     {
         Gate::authorize('reject', $tag);
 
@@ -131,7 +153,13 @@ class TagController extends Controller
             return $this->alreadyApproved();
         }
 
-        $tag->delete();
+        DB::transaction(function () use ($tag, $activity) {
+            $activity->log(ActivityEvent::TagRejected, $tag, properties: [
+                'suggested_by' => $tag->suggestedBy()->value('name'),
+            ]);
+
+            $tag->delete();
+        });
 
         return response()->noContent();
     }

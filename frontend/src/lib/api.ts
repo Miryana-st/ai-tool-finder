@@ -144,6 +144,51 @@ export type UserFilters = {
   page?: number;
 };
 
+// One changed field of an activity entry.
+export type ActivityChange = {
+  old: unknown;
+  new: unknown;
+};
+
+// An entry of the admin activity history; the names are the ones at the time of the action.
+export type ActivityEntry = {
+  id: number;
+  // `<group>.<action>`, e.g. "tool.updated".
+  event: string;
+  event_label: string;
+  group: string;
+  group_label: string;
+  // `id` is null for a deleted user.
+  user: { id: number | null; name: string } | null;
+  // What the action was about; null when it was about no record.
+  subject: { type: string; id: number | null; label: string | null } | null;
+  changes: Record<string, ActivityChange>;
+  // Other details, e.g. `image` of a screenshot or `creator` of a tool.
+  properties: Record<string, unknown>;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+
+export type ActivityEventGroup = {
+  value: string;
+  label: string;
+  events: { value: string; label: string }[];
+};
+
+// `created_from` is inclusive, `created_before` exclusive; both ISO points in time.
+export type ActivityFilters = {
+  search?: string;
+  user_id?: number;
+  group?: string;
+  event?: string;
+  subject_type?: string;
+  subject_id?: number;
+  created_from?: string;
+  created_before?: string;
+  page?: number;
+};
+
 export type PaginationMeta = {
   current_page: number;
   last_page: number;
@@ -374,6 +419,22 @@ export async function getUsers(
 ): Promise<Paginated<User>> {
   const response = await apiFetch(`/api/users${toQuery(filters)}`, { signal });
   return response.json();
+}
+
+// Admin only. 10 entries per page, newest first.
+export async function getActivityLog(
+  filters: ActivityFilters,
+  signal?: AbortSignal,
+): Promise<Paginated<ActivityEntry>> {
+  const response = await apiFetch(`/api/activity-logs${toQuery(filters)}`, { signal });
+  return response.json();
+}
+
+// Admin only. The groups of the activity history and their events, for the filters.
+export async function getActivityEvents(signal?: AbortSignal): Promise<ActivityEventGroup[]> {
+  const response = await apiFetch("/api/activity-logs/events", { signal });
+  const body: { data: ActivityEventGroup[] } = await response.json();
+  return body.data;
 }
 
 // Admin only, not oneself. A user who has added tools cannot be deleted (409).

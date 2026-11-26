@@ -35,6 +35,8 @@ class SystemRoleMiddlewareTest extends TestCase
         'api.users.destroy',
         'api.users.system-role.update',
         'api.users.two-factor.destroy',
+        'api.activity-logs.index',
+        'api.activity-logs.events',
         'api.tools.pending',
         'api.tools.approve',
         'api.tools.reject',

@@ -229,6 +229,23 @@ class Tool extends Model
     }
 
     /**
+     * The values shown in the activity history when the tool is added or
+     * changed: its own fields and the names of its categories, company roles
+     * and tags, read from the database (so right just after a sync).
+     *
+     * @return array<string, mixed>
+     */
+    public function activityValues(): array
+    {
+        return [
+            ...$this->only(['name', 'url', 'documentation_url', 'description', 'how_to_use', 'examples']),
+            'categories' => $this->categories()->pluck('name')->all(),
+            'company_roles' => $this->companyRoles()->pluck('name')->all(),
+            'tags' => $this->tags()->pluck('name')->all(),
+        ];
+    }
+
+    /**
      * Get the screenshots of the tool, in display order.
      *
      * @return HasMany<ToolImage, $this>

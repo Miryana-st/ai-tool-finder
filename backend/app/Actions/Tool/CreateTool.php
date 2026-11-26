@@ -2,13 +2,17 @@
 
 namespace App\Actions\Tool;
 
+use App\Enums\Activity\ActivityEvent;
 use App\Models\Tool\Tool;
 use App\Models\User\User;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\DB;
 
 class CreateTool
 {
     use SyncsToolRelations;
+
+    public function __construct(private readonly ActivityLogger $activity) {}
 
     /**
      * Add a tool created by the user, with its categories, company roles and tags.
@@ -25,6 +29,14 @@ class CreateTool
             $tool->save();
 
             $this->syncRelations($tool, $data);
+
+            $this->activity->log(
+                ActivityEvent::ToolCreated,
+                $tool,
+                $this->activity->created($tool->activityValues()),
+                ['approved' => $tool->isApproved()],
+                $user,
+            );
 
             return $tool;
         });

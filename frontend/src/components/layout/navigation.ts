@@ -23,6 +23,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { label: "Длъжности", href: "/admin/company-roles" },
   { label: "Категории", href: "/admin/categories" },
   { label: "Тагове", href: "/admin/tags" },
+  { label: "История на активността", href: "/admin/activity" },
 ];
 
 export const HOME_HREF = "/dashboard";
