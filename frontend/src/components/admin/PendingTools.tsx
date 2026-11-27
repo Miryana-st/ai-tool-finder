@@ -135,7 +135,7 @@ export default function PendingTools() {
                   </ul>
                 )}
                 <p className={`text-xs ${mutedTextClassName}`}>
-                  Добавен от {tool.creator.name} · {dateFormat.format(new Date(tool.created_at))}
+                  Добавен от {tool.creator?.name ?? "изтрит потребител"} · {dateFormat.format(new Date(tool.created_at))}
                 </p>
               </div>
 

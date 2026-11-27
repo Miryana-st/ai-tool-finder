@@ -94,7 +94,8 @@ export type Tool = {
   // A tool added by a user waits for an admin; until then only its creator and admins see it.
   is_approved: boolean;
   approved_at: string | null;
-  creator: { id: number; name: string };
+  // null once the creator's account is deleted.
+  creator: { id: number; name: string } | null;
   categories: Category[];
   tags: Tag[];
   company_roles: CompanyRole[];

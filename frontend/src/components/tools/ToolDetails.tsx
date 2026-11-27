@@ -160,7 +160,7 @@ function ToolView({ tool }: { tool: Tool }) {
             <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-sm ${mutedTextClassName}`}>
               <span className="inline-flex items-center gap-1.5">
                 <UserRound className="size-4 text-violet-500" />
-                Добавен от {tool.creator.name}
+                Добавен от {tool.creator?.name ?? "изтрит потребител"}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="size-4 text-violet-500" />
