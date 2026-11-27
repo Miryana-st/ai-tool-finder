@@ -10,7 +10,7 @@ final class SlugFormat
     /**
      * Lowercase Latin letters and digits, in words joined by single hyphens.
      */
-    public const string PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    public const string PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D';
 
     public const string MESSAGE = 'The slug may only contain lowercase Latin letters, digits and single hyphens between words.';
 }
