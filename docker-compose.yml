@@ -67,16 +67,6 @@ services:
     networks:
       - ai-tool-finder-network
 
-  mailpit:
-    image: axllent/mailpit
-    container_name: ai-tool-finder-mailpit
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8025:8025" # web UI (this machine only)
-      - "127.0.0.1:1025:1025" # SMTP (this machine only)
-    networks:
-      - ai-tool-finder-network
-
   # Cache store (CACHE_STORE=redis). No published port: reachable only from the containers.
   redis:
     image: redis:7-alpine
