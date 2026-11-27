@@ -3,7 +3,7 @@ import RequireAuth from "@/components/RequireAuth";
 import ProfileOverview from "@/components/profile/ProfileOverview";
 
 export const metadata: Metadata = {
-  title: "Профил | AI-Finder",
+  title: "Профил | AI-Tool-Finder",
 };
 
 export default function ProfilePage() {

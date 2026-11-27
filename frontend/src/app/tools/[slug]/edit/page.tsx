@@ -4,7 +4,7 @@ import RequireAuth from "@/components/RequireAuth";
 import ToolEditor from "@/components/tools/ToolEditor";
 
 export const metadata: Metadata = {
-  title: "Редакция на AI инструмент | AI-Finder",
+  title: "Редакция на AI инструмент | AI-Tool-Finder",
 };
 
 // ToolEditor reads the slug and query from the URL, so it needs a Suspense boundary.

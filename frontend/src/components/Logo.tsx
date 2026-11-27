@@ -1,15 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 
-// Logged-in users go to their dashboard, guests to the home page.
+// Shown only in the guest header, so it always links to the home page.
 export default function Logo() {
-  const { status } = useAuth();
-  const href = status === "authenticated" ? "/dashboard" : "/";
-
   return (
-    <Link href={href} className="flex items-center gap-2 font-semibold">
+    <Link href="/" className="flex items-center gap-2 font-semibold">
       <svg
         viewBox="0 0 32 32"
         className="h-8 w-8"
@@ -20,7 +14,7 @@ export default function Logo() {
         <circle cx="14" cy="14" r="6" fill="none" stroke="white" strokeWidth="2.5" />
         <path d="M18.5 18.5 24 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       </svg>
-      <span className="text-lg">AI-Finder</span>
+      <span className="text-lg">AI-Tool-Finder</span>
     </Link>
   );
 }

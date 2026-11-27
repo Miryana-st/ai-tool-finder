@@ -4,7 +4,7 @@ import RequireAuth from "@/components/RequireAuth";
 import ToolForm from "@/components/tools/ToolForm";
 
 export const metadata: Metadata = {
-  title: "Добави инструмент | AI-Finder",
+  title: "Добави инструмент | AI-Tool-Finder",
 };
 
 export default function NewToolPage() {

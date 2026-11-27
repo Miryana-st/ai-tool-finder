@@ -164,7 +164,7 @@ function TwoFactorStep({ onBack }: { onBack: () => void }) {
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {useRecoveryCode
           ? "Въведи един от резервните кодове, които запази при включването на двуфакторната защита."
-          : "Отвори приложението за автентикация и въведи 6-цифрения код за AI-Finder."}
+          : "Отвори приложението за автентикация и въведи 6-цифрения код за AI-Tool-Finder."}
       </p>
 
       {error && (

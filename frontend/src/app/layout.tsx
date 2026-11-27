@@ -9,7 +9,7 @@ import "@/styles/globals.css";
 const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "AI-Finder",
+  title: "AI-Tool-Finder",
   description: "Открий и управлявай AI инструменти.",
 };
 

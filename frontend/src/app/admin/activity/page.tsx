@@ -5,7 +5,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import ActivityLog from "@/components/admin/ActivityLog";
 
 export const metadata: Metadata = {
-  title: "История на активността | AI-Finder",
+  title: "История на активността | AI-Tool-Finder",
 };
 
 // ActivityLog reads the filters from the URL (useSearchParams), so it needs a Suspense boundary.
