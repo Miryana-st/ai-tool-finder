@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Integration tests: the API against real MySQL and Redis instances instead of
+    in-memory SQLite and the array cache (phpunit.xml).
+
+    docker compose exec app php artisan test -c phpunit.integration.xml
+
+    The database name and the Redis database index are forced, so neither .env
+    nor the environment can point the tests (which empty both) at development data.
+    Hosts and credentials can be overridden by the environment (CI does).
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="FRONTEND_URL" value="http://localhost:3000"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost:3000"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!-- MySQL: the database created by mysql/init/01-testing-database.sql. -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DB_DATABASE" value="ai_finder_testing" force="true"/>
+        <env name="DB_HOST" value="db"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_USERNAME" value="ai_finder_user"/>
+        <env name="DB_PASSWORD" value="local_dev_password"/>
+
+        <!-- Sessions in the database, like in development. -->
+        <env name="SESSION_DRIVER" value="database" force="true"/>
+
+        <!-- Redis: a database index of its own, so flushing it keeps the development cache. -->
+        <env name="CACHE_STORE" value="redis" force="true"/>
+        <env name="CACHE_PREFIX" value="ai-tool-finder-testing-cache-" force="true"/>
+        <env name="REDIS_URL" value="" force="true"/>
+        <env name="REDIS_CACHE_DB" value="15" force="true"/>
+        <env name="REDIS_CLIENT" value="phpredis"/>
+        <env name="REDIS_HOST" value="redis"/>
+        <env name="REDIS_PORT" value="6379"/>
+        <env name="REDIS_PASSWORD" value="null"/>
+    </php>
+</phpunit>

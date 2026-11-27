@@ -161,8 +161,26 @@ docker compose logs -f queue               # queue worker logs
 docker compose restart queue               # reload the worker after changing job code
 docker compose exec app php artisan test   # run backend tests
 docker compose exec app php artisan test --testsuite=Unit   # only the fast unit tests (no database)
+docker compose exec app php artisan test -c phpunit.integration.xml   # integration tests (real MySQL and Redis)
 docker compose exec node npm run lint      # lint the frontend
 ```
+
+### Integration tests
+
+`backend/tests/Integration` runs the API against the real MySQL and Redis
+containers instead of in-memory SQLite and the array cache: database constraints,
+the collation, sessions stored in MySQL and the catalog cache in Redis. It uses its own
+database, `ai_finder_testing`, and Redis database 15. The tests empty both, and they
+refuse to run against anything else, so development data is never touched.
+
+A fresh MySQL volume creates the test database from `mysql/init/01-testing-database.sql`.
+On an existing volume, create it once:
+
+```bash
+docker compose exec -T db mysql -uroot -plocal_root_password < mysql/init/01-testing-database.sql
+```
+
+In CI they run in their own job, with MySQL and Redis services, after the unit and feature tests pass.
 
 ## Adding Tools
 
