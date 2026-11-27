@@ -11,6 +11,7 @@ It has a Laravel API backend and a separate Next.js frontend, both run with Dock
 - [Running with Docker](#running-with-docker)
 - [Adding Tools](#adding-tools)
 - [Roles and Permissions](#roles-and-permissions)
+- [AI Agents](#ai-agents)
 - [Development Status](#development-status)
 
 ## Tech Stack
@@ -36,12 +37,14 @@ It has a Laravel API backend and a separate Next.js frontend, both run with Dock
 
 ```text
 AI-Tool-Finder/
+├── .claude/              # Claude Code agents and skills (see AI Agents)
 ├── backend/              # Laravel application (API only)
 ├── frontend/             # Next.js application
 ├── nginx/                # Nginx configuration
 ├── docker/
 │   └── php/              # PHP-FPM image (used by app and queue)
 ├── docker-compose.yml
+├── CLAUDE.md             # Project rules for Claude Code
 └── README.md
 ```
 
@@ -257,6 +260,106 @@ middleware (`EnsureUserHasSystemRole`) guards the admin routes, and the policies
 
 Sign in as an admin, open **Потребители** (`/admin/users`), pick the user and change the system role
 to admin. The seeded `owner@ai-finder.test` account is the first admin.
+
+## AI Agents
+
+The project is developed with [Claude Code](https://claude.com/claude-code).
+Its configuration is in the repository, so every session uses the same rules and helpers.
+
+| Name                   | Type  | File                                    | What it does | Changes code? |
+|------------------------|-------|-----------------------------------------|--------------|:-------------:|
+| Project rules          | —     | `CLAUDE.md`                             | Stack, Git workflow, coding, database, security and testing rules. Loaded automatically in every session. | — |
+| `issue-analyzer`       | skill | `.claude/skills/issue-analyzer/SKILL.md` | Reads a GitHub issue (`gh`) and the related code, and returns an implementation plan in Bulgarian. Works only in Plan Mode. | ❌ |
+| `senior-code-reviewer` | agent | `.claude/agents/senior-code-reviewer.md` | Independent review of the local changes or of the current branch against `main`. Returns a report in Bulgarian with findings by severity (CRITICAL … INFO) and a verdict (APPROVE / REQUEST CHANGES / …). | ❌ |
+
+### How to use them
+
+- **`issue-analyzer`**: type `/issue-analyzer <issue number>`.
+- **`senior-code-reviewer`**: ask for a code review, for example "пусни senior-code-reviewer".
+  Claude Code may also start it on its own after a feature or fix, before a commit.
+  It reads Git and the code, and may run `pint --test` (in the `app` container),
+  `tsc --noEmit` and `eslint`. It does not run `php artisan test` or builds, does not
+  read `.env` files, and does not change files, branches or commits.
+- New or changed agents are picked up after Claude Code is restarted; check with `/agents`.
+
+### Recommended workflow
+
+1. Analyze the issue with `issue-analyzer` and agree on the plan.
+2. Create a branch from the latest `main` (`feat/…`, `fix/…`, `docs/…`).
+3. Implement the plan and add or update tests.
+4. Run the tests: `docker compose exec app php artisan test` (and `docker compose exec node npm run lint` for frontend changes).
+5. Run `senior-code-reviewer` and fix the CRITICAL and HIGH findings.
+6. Review the diff; commit and push only after approval.
+
+### Starter prompts
+
+Copy a prompt into a new Claude Code session and replace the values in `<…>`.
+
+**1. Analyze an issue**
+
+```text
+/issue-analyzer <номер на issue>
+```
+
+**2. Start development from an approved plan**
+
+```text
+Имплементирай одобрения план за Issue #<номер>.
+- Провери git status и създай нов бранч от актуалния main: <feat/кратко-име>.
+- Спазвай CLAUDE.md: малки и фокусирани промени, без несвързан рефакторинг.
+- Добави или обнови тестове за успешни сценарии, валидационни грешки и edge cases.
+- Пусни docker compose exec app php artisan test (и npm run lint при промени във frontend)
+  и докладвай реалните резултати.
+- Накрая пусни senior-code-reviewer и оправи CRITICAL и HIGH забележките.
+- Покажи ми diff-а. Не commit-вай и не push-вай без моето одобрение.
+```
+
+**3. Start development without an issue**
+
+```text
+Искам да добавя: <кратко описание на функционалността>.
+Очаквано поведение: <какво трябва да се случва>.
+Засегнати роли: <user / admin / конкретна company role>.
+Първо разгледай съществуващия код и ми предложи план. Не пиши код, докато не одобря плана.
+След одобрение работи в нов бранч от main и следвай CLAUDE.md.
+```
+
+**4. Fix a bug**
+
+```text
+Има бъг: <какво се случва>.
+Стъпки за възпроизвеждане: <1. … 2. … 3. …>.
+Очаквано поведение: <какво трябва да се случва>.
+Намери причината, преди да променяш код, и ми я обясни.
+Оправи я в нов бранч fix/<кратко-име>, добави тест, който пада без поправката,
+и пусни тестовете. Не commit-вай без одобрение.
+```
+
+**5. Code review**
+
+```text
+Пусни senior-code-reviewer за локалните промени.
+```
+
+```text
+Пусни senior-code-reviewer за всички промени в текущия бранч спрямо main.
+```
+
+**6. Fix the review findings**
+
+```text
+Оправи забележките от code review с приоритет <CRITICAL и HIGH / всички>.
+За всяка забележка, с която не си съгласен, обясни защо, вместо да я пропускаш.
+Пусни тестовете отново и покажи diff-а.
+```
+
+**7. Continue earlier work (after `/clear` or in a new session)**
+
+```text
+Продължаваме работата по бранча <име на бранча> (Issue #<номер>).
+Провери git status, git log спрямо main и diff-а, за да видиш какво е направено.
+Обобщи текущото състояние и какво остава, преди да продължиш.
+```
 
 ## Development Status
 
