@@ -53,6 +53,7 @@
         <env name="CACHE_STORE" value="redis" force="true"/>
         <env name="CACHE_PREFIX" value="ai-tool-finder-testing-cache-" force="true"/>
         <env name="REDIS_URL" value="" force="true"/>
+        <env name="REDIS_CACHE_CONNECTION" value="cache" force="true"/>
         <env name="REDIS_CACHE_DB" value="15" force="true"/>
         <env name="REDIS_CLIENT" value="phpredis"/>
         <env name="REDIS_HOST" value="redis"/>

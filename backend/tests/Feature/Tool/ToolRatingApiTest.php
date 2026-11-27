@@ -4,7 +4,9 @@ namespace Tests\Feature\Tool;
 
 use App\Models\Tool\Tool;
 use App\Models\User\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -38,6 +40,50 @@ class ToolRatingApiTest extends TestCase
             ->assertExactJson(['data' => ['rating_average' => 5, 'ratings_count' => 1, 'my_rating' => 5]]);
 
         $this->assertDatabaseCount('tool_ratings', 1);
+    }
+
+    public function test_rating_again_keeps_when_the_user_first_rated(): void
+    {
+        $user = User::factory()->create();
+        $tool = Tool::factory()->create();
+
+        $this->actingAs($user)->putJson("/api/tools/{$tool->id}/rating", ['rating' => 2])->assertOk();
+        $firstRated = DB::table('tool_ratings')->value('created_at');
+
+        $this->travel(1)->hour();
+        $this->putJson("/api/tools/{$tool->id}/rating", ['rating' => 5])->assertOk();
+
+        $row = DB::table('tool_ratings')->first();
+        $this->assertSame($firstRated, $row->created_at);
+        $this->assertNotSame($firstRated, $row->updated_at);
+    }
+
+    public function test_a_rating_saved_by_another_request_at_the_same_time_does_not_fail(): void
+    {
+        $user = User::factory()->create();
+        $tool = Tool::factory()->create();
+        $written = false;
+
+        // Plays the other request (a second tab): it saves the user's rating after
+        // this request has looked for one but before this request writes. A
+        // read-then-insert would then insert the pair twice and answer 500.
+        DB::listen(function (QueryExecuted $query) use ($user, $tool, &$written) {
+            if (! str_contains($query->sql, 'tool_ratings')) {
+                return;
+            }
+            if (preg_match('/^(insert|update)/i', $query->sql)) {
+                $written = true;
+            } elseif (! $written && preg_match('/^select/i', $query->sql)) {
+                $written = true;
+                DB::table('tool_ratings')->insert(['tool_id' => $tool->id, 'user_id' => $user->id, 'rating' => 2]);
+            }
+        });
+
+        $this->actingAs($user)
+            ->putJson("/api/tools/{$tool->id}/rating", ['rating' => 5])
+            ->assertOk()
+            ->assertJsonPath('data.my_rating', 5)
+            ->assertJsonPath('data.ratings_count', 1);
     }
 
     public function test_the_average_covers_every_user_and_is_rounded_to_one_decimal(): void
@@ -111,6 +157,23 @@ class ToolRatingApiTest extends TestCase
             ->assertNotFound();
 
         $this->assertDatabaseEmpty('tool_ratings');
+    }
+
+    public function test_removing_a_rating_of_a_tool_the_user_cannot_see_is_not_found(): void
+    {
+        $creator = User::factory()->create();
+        $tool = Tool::factory()->pending()->for($creator)->create();
+
+        // Like rating it or reading it: a pending tool does not exist for other users.
+        $this->actingAs(User::factory()->create())
+            ->deleteJson("/api/tools/{$tool->id}/rating")
+            ->assertNotFound();
+
+        // Its creator sees it, so there is simply nothing to remove.
+        $this->actingAs($creator)
+            ->deleteJson("/api/tools/{$tool->id}/rating")
+            ->assertOk()
+            ->assertJsonPath('data.ratings_count', 0);
     }
 
     public function test_deleted_or_missing_tools_cannot_be_rated(): void
