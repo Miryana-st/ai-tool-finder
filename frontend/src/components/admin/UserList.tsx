@@ -126,7 +126,7 @@ export default function UserList() {
   }, [query, urlSearch, systemRole, companyRole, page, reloadKey]);
 
   const deleteUser = async (user: User) => {
-    if (!window.confirm(`Да изтрия ли акаунта на ${user.name} (${user.email})? Това действие е необратимо.`)) {
+    if (!window.confirm(`Да изтрия ли акаунта на ${user.name} (${user.email})? Добавените от потребителя инструменти ще останат. Това действие е необратимо.`)) {
       return;
     }
 
@@ -138,12 +138,7 @@ export default function UserList() {
       setMessage({ type: "success", text: `Акаунтът на ${user.name} е изтрит.` });
       setReloadKey((key) => key + 1);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
-        setMessage({
-          type: "error",
-          text: `${user.name} е добавил AI инструменти, затова акаунтът не може да се изтрие.`,
-        });
-      } else if (error instanceof ApiError && error.status === 404) {
+      if (error instanceof ApiError && error.status === 404) {
         setMessage({ type: "error", text: `Акаунтът на ${user.name} вече е изтрит.` });
         setReloadKey((key) => key + 1);
       } else {

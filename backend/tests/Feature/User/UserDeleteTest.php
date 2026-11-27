@@ -72,31 +72,70 @@ class UserDeleteTest extends TestCase
         $this->assertNull($category->fresh()->suggested_by_id);
     }
 
-    public function test_user_who_added_tools_cannot_be_deleted(): void
+    public function test_user_who_added_tools_can_be_deleted_and_the_tools_are_kept(): void
     {
         $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
-        Tool::factory()->for($user)->create();
+        $approved = Tool::factory()->for($user)->create();
+        $pending = Tool::factory()->for($user)->pending()->create();
+        $deleted = Tool::factory()->for($user)->create();
+        $deleted->delete();
 
         $this->actingAs($admin)
             ->deleteJson("/api/users/{$user->id}")
-            ->assertConflict()
-            ->assertExactJson(['message' => 'The user has added tools and cannot be deleted.']);
+            ->assertNoContent();
 
-        $this->assertModelExists($user);
+        $this->assertModelMissing($user);
+
+        foreach ([$approved, $pending, $deleted] as $tool) {
+            $tool = Tool::withTrashed()->find($tool->id);
+            $this->assertNotNull($tool);
+            $this->assertNull($tool->user_id);
+        }
+
+        $this->assertSoftDeleted($deleted);
     }
 
-    public function test_user_whose_tools_are_deleted_still_cannot_be_deleted(): void
+    public function test_a_tool_of_a_deleted_user_is_shown_without_a_creator(): void
     {
         $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
-        Tool::factory()->for($user)->create()->delete();
+        $tool = Tool::factory()->for($user)->create();
+
+        $this->actingAs($admin)->deleteJson("/api/users/{$user->id}")->assertNoContent();
+
+        $this->actingAs(User::factory()->create())
+            ->getJson("/api/tools/{$tool->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.creator', null)
+            ->assertJsonPath('data.can.update', false)
+            ->assertJsonPath('data.can.delete', false);
 
         $this->actingAs($admin)
-            ->deleteJson("/api/users/{$user->id}")
-            ->assertConflict();
+            ->getJson("/api/tools/{$tool->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.can.update', true);
+    }
 
-        $this->assertModelExists($user);
+    public function test_admin_can_still_approve_a_pending_tool_of_a_deleted_user(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        $tool = Tool::factory()->for($user)->pending()->create();
+
+        $this->actingAs($admin)->deleteJson("/api/users/{$user->id}")->assertNoContent();
+
+        $this->actingAs($admin)
+            ->getJson('/api/tools/pending')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $tool->id)
+            ->assertJsonPath('data.0.creator', null);
+
+        $this->actingAs($admin)
+            ->postJson("/api/tools/{$tool->id}/approve")
+            ->assertOk();
+
+        $this->assertTrue($tool->fresh()->isApproved());
     }
 
     public function test_admin_cannot_delete_themselves(): void

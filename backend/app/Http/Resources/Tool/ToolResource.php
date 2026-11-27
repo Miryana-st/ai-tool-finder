@@ -33,10 +33,11 @@ class ToolResource extends JsonResource
             'examples' => $this->examples,
             'is_approved' => $this->isApproved(),
             'approved_at' => $this->approved_at,
-            'creator' => $this->whenLoaded('user', fn () => [
+            // null once the creator's account is deleted.
+            'creator' => $this->whenLoaded('user', fn () => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-            ]),
+            ] : null),
             'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'tags' => TagResource::collection($this->whenLoaded('tags')),
             'company_roles' => CompanyRoleResource::collection($this->whenLoaded('companyRoles')),

@@ -194,13 +194,15 @@ class ToolModelTest extends TestCase
         $this->assertSame(0, $tool->companyRoles()->count());
     }
 
-    public function test_a_user_with_tools_cannot_be_deleted(): void
+    public function test_deleting_a_user_keeps_their_tools_without_a_creator(): void
     {
         $tool = Tool::factory()->create();
 
-        $this->expectException(QueryException::class);
-
         $tool->user->delete();
+
+        $tool->refresh();
+        $this->assertNull($tool->user_id);
+        $this->assertNull($tool->user);
     }
 
     public function test_seeder_creates_tools_with_all_relations(): void

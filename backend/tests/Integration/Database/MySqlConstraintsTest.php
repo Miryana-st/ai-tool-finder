@@ -107,27 +107,28 @@ class MySqlConstraintsTest extends IntegrationTestCase
             ->assertJsonValidationErrors('name');
     }
 
-    public function test_a_user_who_added_tools_cannot_be_deleted_at_the_database_level(): void
+    public function test_deleting_a_user_clears_the_creator_of_their_tools_at_the_database_level(): void
     {
         $user = User::factory()->create();
-        Tool::factory()->for($user)->create();
+        $tool = Tool::factory()->for($user)->create();
 
-        $this->expectException(QueryException::class);
-
+        // A plain query, so only the database (no model events) clears the creator.
         DB::table('users')->where('id', $user->id)->delete();
+
+        $this->assertDatabaseHas('tools', ['id' => $tool->id, 'user_id' => null]);
     }
 
-    public function test_the_api_answers_deleting_a_user_with_tools_with_a_conflict(): void
+    public function test_the_api_deletes_a_user_with_tools_and_keeps_the_tools(): void
     {
         $user = User::factory()->create();
-        Tool::factory()->for($user)->create();
+        $tool = Tool::factory()->for($user)->create();
 
         $this->actingAs(User::factory()->admin()->create())
             ->deleteJson("/api/users/{$user->id}")
-            ->assertConflict()
-            ->assertExactJson(['message' => 'The user has added tools and cannot be deleted.']);
+            ->assertNoContent();
 
-        $this->assertModelExists($user);
+        $this->assertModelMissing($user);
+        $this->assertDatabaseHas('tools', ['id' => $tool->id, 'user_id' => null]);
     }
 
     public function test_force_deleting_a_tool_removes_its_links_through_the_cascades(): void

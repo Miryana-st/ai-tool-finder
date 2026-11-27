@@ -83,17 +83,14 @@ class UserController extends Controller
     }
 
     /**
-     * Delete the given user (admins only, not themselves).
+     * Delete the given user (admins only, not themselves). The tools they
+     * added stay, without a creator.
      */
-    public function destroy(User $user, DeleteUser $deleteUser): JsonResponse|Response
+    public function destroy(User $user, DeleteUser $deleteUser): Response
     {
         Gate::authorize('delete', $user);
 
-        if (! $deleteUser->handle($user)) {
-            return response()->json([
-                'message' => 'The user has added tools and cannot be deleted.',
-            ], Response::HTTP_CONFLICT);
-        }
+        $deleteUser->handle($user);
 
         return response()->noContent();
     }

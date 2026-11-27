@@ -320,6 +320,8 @@ middleware (`EnsureUserHasSystemRole`) guards the admin routes, and the policies
   (`PATCH /api/users/{id}/system-role`).
 - The last admin cannot lose the admin role.
 - Admins cannot delete their own account, so at least one admin always remains.
+- Deleting a user keeps the tools they added (shown as added by a deleted user), as well
+  as their comments and suggestions.
 - Admins turn off their own two-factor authentication from the profile (with their
   password), not from the users list.
 
