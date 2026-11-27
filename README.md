@@ -146,6 +146,11 @@ sends everything else to the Next.js dev server.
 Laravel and Next.js do not publish their own ports, so the frontend and the API
 share one origin (no CORS, first-party session cookies).
 
+> Open the app via `http://localhost:3000`, not `http://127.0.0.1:3000`.
+> The session and CSRF cookies are bound to `localhost`
+> (`SESSION_DOMAIN=localhost`, `SANCTUM_STATEFUL_DOMAINS=localhost:3000` in
+> `backend/.env`), so on `127.0.0.1` they are not sent and login fails with **419**.
+
 ### Useful commands
 
 ```bash
@@ -270,7 +275,7 @@ Its configuration is in the repository, so every session uses the same rules and
 |------------------------|-------|-----------------------------------------|--------------|:-------------:|
 | Project rules          | —     | `CLAUDE.md`                             | Stack, Git workflow, coding, database, security and testing rules. Loaded automatically in every session. | — |
 | `issue-analyzer`       | skill | `.claude/skills/issue-analyzer/SKILL.md` | Reads a GitHub issue (`gh`) and the related code, and returns an implementation plan in Bulgarian. Works only in Plan Mode. | ❌ |
-| `senior-code-reviewer` | agent | `.claude/agents/senior-code-reviewer.md` | Independent review of the local changes or of the current branch against `main`. Returns a report in Bulgarian with findings by severity (CRITICAL … INFO) and a verdict (APPROVE / REQUEST CHANGES / …). | ❌ |
+| `senior-code-reviewer` | agent | `.claude/agents/senior-code-reviewer.md` | Independent review of the local changes or of the current branch against the newer of `main` / `origin/main` (it does not run `git fetch`, so pull `main` first for an accurate scope). Returns a report in Bulgarian with findings by severity (CRITICAL … INFO) and a verdict (APPROVE / REQUEST CHANGES / …). | ❌ |
 
 ### How to use them
 
