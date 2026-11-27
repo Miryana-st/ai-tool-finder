@@ -93,6 +93,8 @@ services:
       - "127.0.0.1:3307:3306" # this machine only
     volumes:
       - mysql_data:/var/lib/mysql
+      # Runs only on a fresh volume: creates the integration test database.
+      - ./mysql/init/01-testing-database.sql:/docker-entrypoint-initdb.d/01-testing-database.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-plocal_root_password"]
       interval: 5s
