@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LoginForm from "@/components/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Вход | AI-Finder",
+  title: "Вход | AI-Tool-Finder",
 };
 
 export default function LoginPage() {

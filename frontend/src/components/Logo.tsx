@@ -14,7 +14,7 @@ export default function Logo() {
         <circle cx="14" cy="14" r="6" fill="none" stroke="white" strokeWidth="2.5" />
         <path d="M18.5 18.5 24 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       </svg>
-      <span className="text-lg">AI-Finder</span>
+      <span className="text-lg">AI-Tool-Finder</span>
     </Link>
   );
 }

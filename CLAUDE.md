@@ -1,5 +1,5 @@
 ## Project Context
-AI-Finder is a role-based SaaS platform for discovering and managing AI tools.
+AI-Tool-Finder is a role-based SaaS platform for discovering and managing AI tools.
 
 The application has separate Laravel backend and Next.js frontend.
 Development is done incrementally, starting with the backend.

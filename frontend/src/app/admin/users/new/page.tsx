@@ -4,7 +4,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import UserCreateForm from "@/components/admin/UserCreateForm";
 
 export const metadata: Metadata = {
-  title: "Добави потребител | AI-Finder",
+  title: "Добави потребител | AI-Tool-Finder",
 };
 
 export default function AdminNewUserPage() {

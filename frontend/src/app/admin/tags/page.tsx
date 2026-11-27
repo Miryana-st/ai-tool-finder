@@ -3,7 +3,7 @@ import RequireAuth from "@/components/RequireAuth";
 import TaxonomyManager from "@/components/admin/TaxonomyManager";
 
 export const metadata: Metadata = {
-  title: "Тагове | AI-Finder",
+  title: "Тагове | AI-Tool-Finder",
 };
 
 export default function AdminTagsPage() {

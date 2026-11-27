@@ -4,7 +4,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import UserEditForm from "@/components/admin/UserEditForm";
 
 export const metadata: Metadata = {
-  title: "Редактирай потребител | AI-Finder",
+  title: "Редактирай потребител | AI-Tool-Finder",
 };
 
 export default function AdminEditUserPage() {

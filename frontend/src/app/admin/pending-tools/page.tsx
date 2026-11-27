@@ -4,7 +4,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import PendingTools from "@/components/admin/PendingTools";
 
 export const metadata: Metadata = {
-  title: "Чакащи инструменти | AI-Finder",
+  title: "Чакащи инструменти | AI-Tool-Finder",
 };
 
 export default function AdminPendingToolsPage() {

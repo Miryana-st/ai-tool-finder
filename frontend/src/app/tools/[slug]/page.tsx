@@ -4,7 +4,7 @@ import RequireAuth from "@/components/RequireAuth";
 import ToolDetails from "@/components/tools/ToolDetails";
 
 export const metadata: Metadata = {
-  title: "AI инструмент | AI-Finder",
+  title: "AI инструмент | AI-Tool-Finder",
 };
 
 // ToolDetails reads the slug from the URL (useParams), so it needs a Suspense boundary.

@@ -5,7 +5,7 @@ import AdminOnly from "@/components/admin/AdminOnly";
 import UserList from "@/components/admin/UserList";
 
 export const metadata: Metadata = {
-  title: "Потребители | AI-Finder",
+  title: "Потребители | AI-Tool-Finder",
 };
 
 // UserList reads the filters from the URL (useSearchParams), so it needs a Suspense boundary.

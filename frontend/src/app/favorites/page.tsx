@@ -4,7 +4,7 @@ import RequireAuth from "@/components/RequireAuth";
 import ToolList from "@/components/tools/ToolList";
 
 export const metadata: Metadata = {
-  title: "Любими инструменти | AI-Finder",
+  title: "Любими инструменти | AI-Tool-Finder",
 };
 
 // ToolList reads the filters from the URL (useSearchParams), so it needs a Suspense boundary.
