@@ -775,6 +775,21 @@ export async function uploadToolImage(toolId: number, file: File): Promise<ToolI
   return body.data;
 }
 
+// A screenshot for the Markdown examples, uploaded before the tool is saved (not tied
+// to a tool); the answer is the URL to put in the text. Limits as for TOOL_IMAGE_TYPES
+// and MAX_TOOL_IMAGE_BYTES; at most 30 uploads a minute.
+export async function uploadExampleImage(file: File): Promise<{ url: string; original_name: string }> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await apiFetch("/api/example-images", {
+    method: "POST",
+    body: formData,
+  });
+  const body: { data: { url: string; original_name: string } } = await response.json();
+  return body.data;
+}
+
 export async function deleteToolImage(toolId: number, imageId: number): Promise<void> {
   await apiFetch(`/api/tools/${toolId}/images/${imageId}`, { method: "DELETE" });
 }

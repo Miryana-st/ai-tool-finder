@@ -195,11 +195,31 @@ Any signed-in user can add a tool from **Добави инструмент** (`/
 | Documentation URL | yes      | `http` or `https` link to its documentation            |
 | Description       | yes      |                                                        |
 | How to use        | yes      |                                                        |
-| Examples          | no       |                                                        |
+| Examples          | no       | Markdown; **Добави линк** and **Качи скрийншот** insert a link or an uploaded screenshot (see below) |
 | Company roles     | yes (≥ 1)| The positions the tool is meant for                    |
 | Categories        | yes (≥ 1)| Only approved categories can be picked                 |
 | Tags              | no       | Only approved tags can be picked                       |
 | Screenshots       | no       | PNG, JPG or WebP, up to 4 MB each, added after saving  |
+
+### Links and screenshots in the examples
+
+Above the examples field, **Добави линк** asks for an address (`http`/`https`) and an
+optional text, and **Качи скрийншот** uploads a PNG, JPG or WebP image (up to 4 MB, at
+most 30 uploads a minute). Both put the Markdown at the cursor, and **Преглед** shows how
+the text will look.
+
+Example screenshots are separate from the tool's own screenshots: they are uploaded
+before the tool is saved (`POST /api/example-images`), stored under
+`storage/app/public/examples` and referred to by their `/storage/…` URL in the text.
+Screenshots no tool refers to (a form that was never saved, an image removed from the
+text) are deleted after a day by:
+
+```bash
+docker compose exec app php artisan example-images:prune
+```
+
+It is scheduled daily in `routes/console.php`, but the Docker setup runs no scheduler,
+so for now run it by hand.
 
 ### Approval
 

@@ -4,6 +4,7 @@ namespace App\Models\User;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\User\SystemRole;
+use App\Models\Tool\ExampleImage;
 use App\Models\Tool\Tool;
 use Database\Factories\User\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -85,6 +86,16 @@ class User extends Authenticatable
     public function favoriteTools(): BelongsToMany
     {
         return $this->belongsToMany(Tool::class, 'favorite_tools')->withTimestamps();
+    }
+
+    /**
+     * Get the screenshots the user uploaded for tool examples.
+     *
+     * @return HasMany<ExampleImage, $this>
+     */
+    public function exampleImages(): HasMany
+    {
+        return $this->hasMany(ExampleImage::class);
     }
 
     /**
