@@ -7,6 +7,7 @@ use App\Http\Requests\Tool\StoreExampleImageRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -28,7 +29,8 @@ class ExampleImageController extends Controller
         try {
             $image = $request->user()->exampleImages()->create([
                 'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
+                // The column holds 255 characters; a longer name from the client would fail the insert.
+                'original_name' => Str::limit($file->getClientOriginalName(), 255, ''),
             ]);
         } catch (Throwable $exception) {
             Storage::disk('public')->delete($path);

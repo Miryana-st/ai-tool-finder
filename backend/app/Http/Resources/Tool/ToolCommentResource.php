@@ -29,6 +29,7 @@ class ToolCommentResource extends JsonResource
                 'name' => $this->user->name,
             ] : null),
             'is_edited' => $this->isEdited(),
+            'edited_at' => $this->edited_at,
             'can' => [
                 'update' => (bool) $request->user()?->can('update', $this->resource),
                 'delete' => (bool) $request->user()?->can('delete', $this->resource),

@@ -91,6 +91,23 @@ class FavoriteToolApiTest extends TestCase
         $this->assertDatabaseCount('favorite_tools', 0);
     }
 
+    public function test_a_tool_the_user_cannot_see_is_not_found_when_adding_or_removing(): void
+    {
+        $creator = User::factory()->create();
+        $tool = Tool::factory()->pending()->for($creator)->create();
+
+        // A pending tool does not exist for other users, whichever way they ask.
+        $this->actingAs(User::factory()->create());
+        $this->putJson("/api/tools/{$tool->id}/favorite")->assertNotFound();
+        $this->deleteJson("/api/tools/{$tool->id}/favorite")->assertNotFound();
+
+        // Its creator sees it.
+        $this->actingAs($creator)
+            ->deleteJson("/api/tools/{$tool->id}/favorite")
+            ->assertOk()
+            ->assertJsonPath('data.is_favorite', false);
+    }
+
     public function test_deleted_tool_cannot_be_added_to_favorites(): void
     {
         $tool = Tool::factory()->create();

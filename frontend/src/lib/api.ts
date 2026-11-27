@@ -123,6 +123,8 @@ export type ToolComment = {
   // null once the author's account is deleted.
   author: { id: number; name: string } | null;
   is_edited: boolean;
+  // When the author last changed the text; null if never.
+  edited_at: string | null;
   // Only the author may edit; the author or an admin may delete.
   can: { update: boolean; delete: boolean };
   created_at: string;
@@ -728,13 +730,20 @@ export async function setToolRating(toolId: number, rating: number | null): Prom
   return body.data;
 }
 
-// 10 comments per page, newest first.
+// A page of a list that continues from where the previous one ended: pass `next_cursor`
+// for the next page (null on the last one). `total` counts the whole list.
+export type CursorPaginated<T> = {
+  data: T[];
+  meta: { next_cursor: string | null; per_page: number; total: number };
+};
+
+// 10 comments per page, newest first. Without a cursor, the first page.
 export async function getToolComments(
   toolId: number,
-  page = 1,
+  cursor?: string,
   signal?: AbortSignal,
-): Promise<Paginated<ToolComment>> {
-  const response = await apiFetch(`/api/tools/${toolId}/comments${toQuery({ page })}`, { signal });
+): Promise<CursorPaginated<ToolComment>> {
+  const response = await apiFetch(`/api/tools/${toolId}/comments${toQuery({ cursor })}`, { signal });
   return response.json();
 }
 

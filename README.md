@@ -130,6 +130,7 @@ docker compose down         # stop them (database data is kept in a volume)
 | `nginx`   | `ai-tool-finder-nginx`   | Single entry point: routes to Laravel and Next.js |
 | `db`      | `ai-tool-finder-db`      | MySQL 8.4                                    |
 | `queue`   | `ai-tool-finder-queue`   | Laravel queue worker (`queue:work`)          |
+| `scheduler` | `ai-tool-finder-scheduler` | Runs the scheduled commands of `routes/console.php` (`schedule:work`) |
 | `node`    | `ai-tool-finder-node`    | Next.js dev server (`npm install` + `npm run dev`) |
 | `redis`   | `ai-tool-finder-redis`   | Cache store (`CACHE_STORE=redis`); sessions and the queue stay in MySQL |
 
@@ -218,8 +219,9 @@ text) are deleted after a day by:
 docker compose exec app php artisan example-images:prune
 ```
 
-It is scheduled daily in `routes/console.php`, but the Docker setup runs no scheduler,
-so for now run it by hand.
+The `scheduler` container runs it daily at midnight (`routes/console.php`); the command
+above runs it right away. On an existing setup, start the new container once with
+`docker compose up -d scheduler`.
 
 ### Approval
 
@@ -247,7 +249,9 @@ Approved tools can be rated and commented on by any signed-in user (pending ones
 
 - **Rating:** 1 to 5 stars, one per user and tool. Rating again replaces it, and it can
   be removed. Tools show the average (one decimal), the number of ratings and your own.
-- **Comments:** plain text up to 2000 characters, newest first, 10 per page. The author
+- **Comments:** plain text up to 2000 characters, newest first, 10 at a time. The next
+  page is fetched by cursor (`meta.next_cursor` → `?cursor=…`), so comments added or
+  deleted meanwhile are neither skipped nor repeated. The author
   can edit and delete their own comments; an admin can delete any comment, and that is
   recorded in the activity history. A deleted user's comments stay, without an author.
 
