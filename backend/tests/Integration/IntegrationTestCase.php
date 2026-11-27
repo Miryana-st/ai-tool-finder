@@ -51,11 +51,16 @@ abstract class IntegrationTestCase extends TestCase
             ));
         }
 
-        if ($config->get('cache.default') !== 'redis'
-            || (string) $config->get('database.redis.cache.database') !== self::TEST_REDIS_CACHE_DB) {
+        // The database of the connection the cache store really uses: that is what Cache::flush() empties.
+        $redisConnection = $config->get('cache.stores.redis.connection');
+        $redisDatabase = $config->get("database.redis.{$redisConnection}.database");
+
+        if ($config->get('cache.default') !== 'redis' || (string) $redisDatabase !== self::TEST_REDIS_CACHE_DB) {
             throw new RuntimeException(sprintf(
-                'Integration tests need the Redis cache database %s. Run them with -c phpunit.integration.xml.',
+                'Integration tests need the Redis cache database %s, got connection "%s" with database %s. Run them with -c phpunit.integration.xml.',
                 self::TEST_REDIS_CACHE_DB,
+                $redisConnection,
+                var_export($redisDatabase, true),
             ));
         }
 

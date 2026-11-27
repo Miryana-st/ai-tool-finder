@@ -1,7 +1,7 @@
 "use client";
 
 import { ImagePlus, Link2 } from "lucide-react";
-import { useId, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import * as api from "@/lib/api";
 import { ApiError, MAX_TOOL_IMAGE_BYTES, TOOL_IMAGE_TYPES } from "@/lib/api";
@@ -21,6 +21,12 @@ export default function ExamplesEditor({
   invalid: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // The latest text. An upload finishes in the handler of an earlier render, whose
+  // `value` misses what was typed meanwhile; inserting into that would drop it.
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const id = useId();
   const [mode, setMode] = useState<"write" | "preview">("write");
@@ -33,16 +39,20 @@ export default function ExamplesEditor({
   // after it. A block (a screenshot) gets blank lines around it: in Markdown a single
   // line break does not start a new paragraph.
   const insert = (snippet: string, block: boolean) => {
+    const current = valueRef.current;
     const textarea = textareaRef.current;
-    const start = textarea?.selectionStart ?? value.length;
-    const end = textarea?.selectionEnd ?? value.length;
-    const before = value.slice(0, start);
-    const after = value.slice(end);
+    // The cursor is read now, so it matches the latest text.
+    const start = Math.min(textarea?.selectionStart ?? current.length, current.length);
+    const end = Math.min(textarea?.selectionEnd ?? current.length, current.length);
+    const before = current.slice(0, start);
+    const after = current.slice(end);
     const prefix = block && before.trim() !== "" ? "\n".repeat(2 - trailingNewlines(before)) : "";
     const suffix = block && after.trim() !== "" ? "\n".repeat(2 - leadingNewlines(after)) : "";
     const inserted = `${prefix}${snippet}${suffix}`;
+    const next = before + inserted + after;
 
-    onChange(before + inserted + after);
+    valueRef.current = next;
+    onChange(next);
     setMode("write");
 
     requestAnimationFrame(() => {
