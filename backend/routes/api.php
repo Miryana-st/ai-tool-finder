@@ -3,6 +3,7 @@
 use App\Http\Controllers\Activity\ActivityLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tool\CategoryController;
+use App\Http\Controllers\Tool\ExampleImageController;
 use App\Http\Controllers\Tool\FavoriteToolController;
 use App\Http\Controllers\Tool\TagController;
 use App\Http\Controllers\Tool\ToolCommentController;
@@ -95,6 +96,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tools/{tool}/images/{image}', [ToolImageController::class, 'destroy'])
         ->scopeBindings()
         ->name('api.tools.images.destroy');
+
+    // Screenshots for the Markdown examples; not tied to a tool (see ExampleImage).
+    Route::post('/example-images', [ExampleImageController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('api.example-images.store');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');

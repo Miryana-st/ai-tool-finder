@@ -18,6 +18,7 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
+import ExamplesEditor from "./ExamplesEditor";
 import RequiredMark from "./RequiredMark";
 import TagInput from "./TagInput";
 import ToolImagesInput from "./ToolImagesInput";
@@ -257,16 +258,16 @@ export default function ToolForm({ tool }: { tool?: Tool }) {
             {error("company_roles") && <span className={fieldErrorClassName}>{error("company_roles")}</span>}
           </fieldset>
 
-          <TextField label="Примери (не е задължително)" error={error("examples")}>
-            <textarea
+          {/* Not a <label>: the editor has its own buttons. */}
+          <div className="flex flex-col gap-2 text-sm font-semibold">
+            <span>Примери (не е задължително)</span>
+            <ExamplesEditor
               value={fields.examples}
-              onChange={(event) => setField("examples", event.target.value)}
-              rows={3}
-              placeholder=""
-              aria-invalid={Boolean(error("examples"))}
-              className={formFieldClassName}
+              onChange={(value) => setField("examples", value)}
+              invalid={Boolean(error("examples"))}
             />
-          </TextField>
+            {error("examples") && <span className={fieldErrorClassName}>{error("examples")}</span>}
+          </div>
         </div>
       </div>
 
