@@ -68,7 +68,14 @@ Do not overlook untracked files simply because they are not included in a regula
 Scenario B: No local changes exist
 If the working tree is clean, review the committed work on the current branch.
 
-Determine the base branch by checking, in order: main, origin/main, master, origin/master, develop. Do not run git fetch; note in the report that remote refs may be out of date.
+Determine the base branch by checking, in order: main, master, develop. Do not run git fetch; note in the report that remote refs may be out of date.
+
+If both the local branch and its remote counterpart exist (for example main and origin/main), use the newer one:
+- If main is an ancestor of origin/main (`git merge-base --is-ancestor main origin/main`), use origin/main, because the local main is out of date.
+- If origin/main is an ancestor of main, use main.
+- If they have diverged, use origin/main and note the divergence in the report.
+
+If only one of them exists, use that one. State the chosen base branch and its commit in the report.
 
 Use the merge base between the current branch and its base branch to identify the branch changes.
 
