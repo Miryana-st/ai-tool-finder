@@ -44,6 +44,10 @@ class ToolResource extends JsonResource
             // Added by Tool::withFavoriteInfo() / loadFavoriteInfo().
             'favorites_count' => $this->whenHas('favorites_count', fn ($count) => (int) $count),
             'is_favorite' => $this->whenHas('is_favorite', fn ($isFavorite) => (bool) $isFavorite),
+            // Added by Tool::withRatingInfo() / loadRatingInfo().
+            'rating_average' => $this->whenHas('rating_average', fn ($average) => $average === null ? null : round((float) $average, 1)),
+            'ratings_count' => $this->whenHas('ratings_count', fn ($count) => (int) $count),
+            'my_rating' => $this->whenHas('my_rating', fn ($rating) => $rating === null ? null : (int) $rating),
             'can' => [
                 'update' => (bool) $request->user()?->can('update', $this->resource),
                 'delete' => (bool) $request->user()?->can('delete', $this->resource),

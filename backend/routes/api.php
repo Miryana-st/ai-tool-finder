@@ -5,8 +5,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tool\CategoryController;
 use App\Http\Controllers\Tool\FavoriteToolController;
 use App\Http\Controllers\Tool\TagController;
+use App\Http\Controllers\Tool\ToolCommentController;
 use App\Http\Controllers\Tool\ToolController;
 use App\Http\Controllers\Tool\ToolImageController;
+use App\Http\Controllers\Tool\ToolRatingController;
 use App\Http\Controllers\User\CompanyRoleController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\User\UserSystemRoleController;
@@ -76,6 +78,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/tools/{tool}/favorite', [FavoriteToolController::class, 'store'])->name('api.tools.favorite.store');
     Route::delete('/tools/{tool}/favorite', [FavoriteToolController::class, 'destroy'])->name('api.tools.favorite.destroy');
+
+    Route::put('/tools/{tool}/rating', [ToolRatingController::class, 'update'])->name('api.tools.rating.update');
+    Route::delete('/tools/{tool}/rating', [ToolRatingController::class, 'destroy'])->name('api.tools.rating.destroy');
+
+    Route::get('/tools/{tool}/comments', [ToolCommentController::class, 'index'])->name('api.tools.comments.index');
+    Route::post('/tools/{tool}/comments', [ToolCommentController::class, 'store'])->name('api.tools.comments.store');
+    Route::put('/tools/{tool}/comments/{comment}', [ToolCommentController::class, 'update'])
+        ->scopeBindings()
+        ->name('api.tools.comments.update');
+    Route::delete('/tools/{tool}/comments/{comment}', [ToolCommentController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('api.tools.comments.destroy');
 
     Route::post('/tools/{tool}/images', [ToolImageController::class, 'store'])->name('api.tools.images.store');
     Route::delete('/tools/{tool}/images/{image}', [ToolImageController::class, 'destroy'])

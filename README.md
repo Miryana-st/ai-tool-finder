@@ -221,6 +221,16 @@ for a tool only after it is approved.
 The creator of a tool and the admins can edit or delete it.
 Any signed-in user can mark a tool they can see as a favorite (**Любими**, `/favorites`).
 
+### Ratings and comments
+
+Approved tools can be rated and commented on by any signed-in user (pending ones cannot):
+
+- **Rating:** 1 to 5 stars, one per user and tool. Rating again replaces it, and it can
+  be removed. Tools show the average (one decimal), the number of ratings and your own.
+- **Comments:** plain text up to 2000 characters, newest first, 10 per page. The author
+  can edit and delete their own comments; an admin can delete any comment, and that is
+  recorded in the activity history. A deleted user's comments stay, without an author.
+
 ### Through the API
 
 The frontend uses these endpoints; all of them need a Sanctum session
@@ -237,8 +247,15 @@ The frontend uses these endpoints; all of them need a Sanctum session
 | `GET`    | `/api/tools/pending`              | admin              |
 | `POST`   | `/api/tools/{id}/approve`         | admin              |
 | `POST`   | `/api/tools/{id}/reject`          | admin              |
+| `PUT`    | `/api/tools/{id}/rating`          | signed-in users**  |
+| `DELETE` | `/api/tools/{id}/rating`          | signed-in users    |
+| `GET`    | `/api/tools/{id}/comments`        | signed-in users*   |
+| `POST`   | `/api/tools/{id}/comments`        | signed-in users**  |
+| `PUT`    | `/api/tools/{id}/comments/{id}`   | author             |
+| `DELETE` | `/api/tools/{id}/comments/{id}`   | author or admin    |
 
 \* A pending tool returns `404` to anybody except its creator and the admins.
+\*\* Approved tools only; a pending one returns `403` to its creator and the admins.
 
 ## Roles and Permissions
 
@@ -265,6 +282,8 @@ middleware (`EnsureUserHasSystemRole`) guards the admin routes, and the policies
 | Approve / reject tools, categories and tags      |  ❌  |  ✅   |
 | Rename / delete categories and tags              |  ❌  |  ✅   |
 | Manage favorites, own profile, password and 2FA  |  ✅  |  ✅   |
+| Rate and comment on approved tools; edit / delete **own** comments |  ✅  |  ✅   |
+| Delete **other users'** comments                 |  ❌  |  ✅   |
 | Create, edit and delete users                    |  ❌  |  ✅   |
 | Change a user's system role                      |  ❌  |  ✅   |
 | Reset another user's two-factor authentication   |  ❌  |  ✅   |
@@ -393,5 +412,6 @@ Copy a prompt into a new Claude Code session and replace the values in `<…>`.
 - ✅ System roles and admin-managed company roles
 - ✅ Tools with categories, tags, screenshots and admin approval
 - ✅ Favorites and admin activity history
+- ✅ Tool ratings and comments
 - ✅ Redis cache for shared catalog data
 - ✅ Single entry point via nginx; MySQL bound to this machine only

@@ -17,6 +17,7 @@ enum ActivityEvent: string
     case ToolDeleted = 'tool.deleted';
     case ToolImageAdded = 'tool.image_added';
     case ToolImageDeleted = 'tool.image_deleted';
+    case ToolCommentDeleted = 'tool.comment_deleted';
 
     case CategoryCreated = 'category.created';
     case CategoryUpdated = 'category.updated';
@@ -43,6 +44,7 @@ enum ActivityEvent: string
             self::ToolDeleted => 'Изтрит инструмент',
             self::ToolImageAdded => 'Добавена снимка',
             self::ToolImageDeleted => 'Изтрита снимка',
+            self::ToolCommentDeleted => 'Изтрит коментар',
 
             self::CategoryCreated => 'Предложена категория',
             self::CategoryUpdated => 'Редактирана категория',

@@ -9,6 +9,7 @@ import type { FavoriteInfo, Tool } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { markdownToPlainText } from "./Markdown";
 import PendingBadge from "./PendingBadge";
+import RatingStars, { formatRating } from "./RatingStars";
 
 const MAX_CHIPS = 3;
 
@@ -52,6 +53,19 @@ export default function ToolCard({ tool }: { tool: Tool }) {
           </Link>
         </h2>
         {!tool.is_approved && <PendingBadge className="self-start" />}
+        {tool.is_approved && (
+          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <RatingStars value={tool.rating_average} className="text-sm" />
+            {tool.rating_average === null ? (
+              "Без оценки"
+            ) : (
+              <span>
+                <span className="font-semibold text-foreground">{formatRating(tool.rating_average)}</span>
+                {` (${tool.ratings_count})`}
+              </span>
+            )}
+          </span>
+        )}
         <p className="line-clamp-2 text-sm text-muted-foreground">{markdownToPlainText(tool.description)}</p>
       </div>
 

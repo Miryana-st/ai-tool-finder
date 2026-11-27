@@ -379,7 +379,7 @@ function actionOf(event: string): string {
 function eventTone(event: string): string {
   const action = actionOf(event);
 
-  if (["deleted", "rejected", "image_deleted"].includes(action)) {
+  if (["deleted", "rejected", "image_deleted", "comment_deleted"].includes(action)) {
     return "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300";
   }
   if (["created", "approved", "image_added"].includes(action)) {
@@ -390,11 +390,15 @@ function eventTone(event: string): string {
 
 // A short line for the list: which fields changed, or the main detail of the action.
 function summary(entry: ActivityEntry): string | null {
-  const { image, approved } = entry.properties;
+  const { image, approved, author, comment } = entry.properties;
   const action = actionOf(entry.event);
 
   if (typeof image === "string") {
     return `Снимка: ${image}`;
+  }
+  if (action === "comment_deleted") {
+    const by = typeof author === "string" ? author : "изтрит потребител";
+    return typeof comment === "string" ? `Коментар от ${by}: „${comment}“` : `Коментар от ${by}`;
   }
   if (action === "created") {
     return approved === false ? "Чака одобрение" : null;

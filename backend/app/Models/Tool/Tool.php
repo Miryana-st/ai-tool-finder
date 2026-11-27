@@ -173,6 +173,26 @@ class Tool extends Model
     }
 
     /**
+     * Get the users who rated the tool, with their `rating` (1 to 5) on the pivot.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function raters(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'tool_ratings')->withPivot('rating')->withTimestamps();
+    }
+
+    /**
+     * Get the comments on the tool.
+     *
+     * @return HasMany<ToolComment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ToolComment::class);
+    }
+
+    /**
      * Keep only the tools the user marked as favorite.
      *
      * @param  Builder<Tool>  $query
@@ -206,6 +226,33 @@ class Tool extends Model
         return $this
             ->loadCount('favoritedBy as favorites_count')
             ->loadExists(['favoritedBy as is_favorite' => fn (Builder $query) => $query->whereKey($user->getKey())]);
+    }
+
+    /**
+     * Add `rating_average` (null without ratings), `ratings_count` and
+     * `my_rating` (the given user's rating, or null) to each tool.
+     *
+     * @param  Builder<Tool>  $query
+     */
+    #[Scope]
+    protected function withRatingInfo(Builder $query, User $user): void
+    {
+        $query
+            ->withAvg('raters as rating_average', 'tool_ratings.rating')
+            ->withCount('raters as ratings_count')
+            ->withMax(['raters as my_rating' => fn (Builder $query) => $query->whereKey($user->getKey())], 'tool_ratings.rating');
+    }
+
+    /**
+     * Load `rating_average`, `ratings_count` and `my_rating` (see
+     * withRatingInfo) on an already fetched tool.
+     */
+    public function loadRatingInfo(User $user): static
+    {
+        return $this
+            ->loadAvg('raters as rating_average', 'tool_ratings.rating')
+            ->loadCount('raters as ratings_count')
+            ->loadMax(['raters as my_rating' => fn (Builder $query) => $query->whereKey($user->getKey())], 'tool_ratings.rating');
     }
 
     /**

@@ -102,6 +102,28 @@ export type Tool = {
   // How many users marked the tool as favorite, and whether the signed-in user did.
   favorites_count: number;
   is_favorite: boolean;
+  // Average of the 1–5 star ratings (one decimal, null without ratings), their number,
+  // and the signed-in user's own rating (null if they have not rated the tool).
+  rating_average: number | null;
+  ratings_count: number;
+  my_rating: number | null;
+  can: { update: boolean; delete: boolean };
+  created_at: string;
+  updated_at: string;
+};
+
+export type RatingInfo = Pick<Tool, "rating_average" | "ratings_count" | "my_rating">;
+
+// Kept in line with StoreToolCommentRequest::MAX_LENGTH.
+export const MAX_COMMENT_LENGTH = 2000;
+
+export type ToolComment = {
+  id: number;
+  body: string;
+  // null once the author's account is deleted.
+  author: { id: number; name: string } | null;
+  is_edited: boolean;
+  // Only the author may edit; the author or an admin may delete.
   can: { update: boolean; delete: boolean };
   created_at: string;
   updated_at: string;
@@ -693,6 +715,52 @@ export async function setToolFavorite(toolId: number, isFavorite: boolean): Prom
   });
   const body: { data: FavoriteInfo } = await response.json();
   return body.data;
+}
+
+// Approved tools only. A number (1–5) sets or replaces the user's rating, null removes it;
+// both can be repeated safely. The answer is the current state.
+export async function setToolRating(toolId: number, rating: number | null): Promise<RatingInfo> {
+  const response = await apiFetch(`/api/tools/${toolId}/rating`, {
+    method: rating === null ? "DELETE" : "PUT",
+    body: rating === null ? undefined : JSON.stringify({ rating }),
+  });
+  const body: { data: RatingInfo } = await response.json();
+  return body.data;
+}
+
+// 10 comments per page, newest first.
+export async function getToolComments(
+  toolId: number,
+  page = 1,
+  signal?: AbortSignal,
+): Promise<Paginated<ToolComment>> {
+  const response = await apiFetch(`/api/tools/${toolId}/comments${toQuery({ page })}`, { signal });
+  return response.json();
+}
+
+// Approved tools only.
+export async function createToolComment(toolId: number, body: string): Promise<ToolComment> {
+  const response = await apiFetch(`/api/tools/${toolId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+  const result: { data: ToolComment } = await response.json();
+  return result.data;
+}
+
+// The author only.
+export async function updateToolComment(toolId: number, commentId: number, body: string): Promise<ToolComment> {
+  const response = await apiFetch(`/api/tools/${toolId}/comments/${commentId}`, {
+    method: "PUT",
+    body: JSON.stringify({ body }),
+  });
+  const result: { data: ToolComment } = await response.json();
+  return result.data;
+}
+
+// The author, or an admin for any comment.
+export async function deleteToolComment(toolId: number, commentId: number): Promise<void> {
+  await apiFetch(`/api/tools/${toolId}/comments/${commentId}`, { method: "DELETE" });
 }
 
 export async function uploadToolImage(toolId: number, file: File): Promise<ToolImage> {
