@@ -75,17 +75,59 @@ class ToolCommentApiTest extends TestCase
 
         $this->actingAs(User::factory()->create());
 
-        $this->getJson("/api/tools/{$tool->id}/comments")
+        $first = $this->getJson("/api/tools/{$tool->id}/comments")
             ->assertOk()
             ->assertJsonCount(10, 'data')
             ->assertJsonPath('data.0.body', 'Коментар 12')
             ->assertJsonPath('meta.total', 12)
-            ->assertJsonPath('meta.last_page', 2);
+            ->assertJsonPath('meta.per_page', 10);
 
-        $this->getJson("/api/tools/{$tool->id}/comments?page=2")
+        $cursor = $first->json('meta.next_cursor');
+        $this->assertNotNull($cursor);
+
+        $this->getJson("/api/tools/{$tool->id}/comments?cursor={$cursor}")
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.1.body', 'Коментар 1');
+            ->assertJsonPath('data.1.body', 'Коментар 1')
+            ->assertJsonPath('meta.next_cursor', null);
+    }
+
+    public function test_deleting_a_comment_does_not_hide_one_from_the_next_page(): void
+    {
+        $author = User::factory()->create();
+        $tool = Tool::factory()->create();
+
+        foreach (range(1, 12) as $minute) {
+            ToolComment::factory()->for($tool)->for($author)->create([
+                'body' => "Коментар {$minute}",
+                'created_at' => Carbon::parse('2026-11-27 10:00')->addMinutes($minute),
+            ]);
+        }
+
+        $this->actingAs($author);
+        $first = $this->getJson("/api/tools/{$tool->id}/comments")->assertOk();
+
+        // One of the comments already shown is deleted before "show more".
+        $this->deleteJson("/api/tools/{$tool->id}/comments/{$first->json('data.0.id')}")->assertNoContent();
+
+        // A page number would now skip "Коментар 2", which moved onto page 1.
+        $next = $this->getJson("/api/tools/{$tool->id}/comments?cursor={$first->json('meta.next_cursor')}")
+            ->assertOk()
+            ->assertJsonPath('meta.total', 11);
+        $this->assertSame(['Коментар 2', 'Коментар 1'], array_column($next->json('data'), 'body'));
+    }
+
+    public function test_comments_written_in_the_same_second_keep_a_stable_order(): void
+    {
+        $tool = Tool::factory()->create();
+        $at = Carbon::parse('2026-11-27 10:00');
+        $ids = ToolComment::factory()->for($tool)->count(12)->create(['created_at' => $at])->pluck('id')->sortDesc()->values();
+
+        $this->actingAs(User::factory()->create());
+        $first = $this->getJson("/api/tools/{$tool->id}/comments")->assertOk();
+        $second = $this->getJson("/api/tools/{$tool->id}/comments?cursor={$first->json('meta.next_cursor')}")->assertOk();
+
+        $this->assertSame($ids->all(), [...array_column($first->json('data'), 'id'), ...array_column($second->json('data'), 'id')]);
     }
 
     public function test_the_list_shows_what_the_user_may_do_with_each_comment(): void
@@ -117,6 +159,42 @@ class ToolCommentApiTest extends TestCase
             ->assertJsonPath('data.is_edited', true);
 
         $this->assertSame('Ново', $comment->fresh()->body);
+    }
+
+    public function test_an_edit_in_the_same_second_is_marked_as_edited(): void
+    {
+        $this->freezeSecond();
+        $user = User::factory()->create();
+        $comment = ToolComment::factory()->for($user)->create(['body' => 'Старо']);
+
+        $this->actingAs($user)
+            ->putJson("/api/tools/{$comment->tool_id}/comments/{$comment->id}", ['body' => 'Ново'])
+            ->assertOk()
+            ->assertJsonPath('data.is_edited', true)
+            ->assertJsonPath('data.edited_at', $comment->created_at->toJSON());
+    }
+
+    public function test_saving_the_same_text_is_not_an_edit(): void
+    {
+        $user = User::factory()->create();
+        $comment = ToolComment::factory()->for($user)->create(['body' => 'Същото']);
+
+        $this->travel(5)->minutes();
+
+        $this->actingAs($user)
+            ->putJson("/api/tools/{$comment->tool_id}/comments/{$comment->id}", ['body' => 'Същото'])
+            ->assertOk()
+            ->assertJsonPath('data.is_edited', false)
+            ->assertJsonPath('data.edited_at', null);
+    }
+
+    public function test_a_new_comment_is_not_edited_and_the_mark_cannot_be_sent(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson('/api/tools/'.Tool::factory()->create()->id.'/comments', ['body' => 'Текст', 'edited_at' => '2026-01-01 00:00:00'])
+            ->assertCreated()
+            ->assertJsonPath('data.is_edited', false)
+            ->assertJsonPath('data.edited_at', null);
     }
 
     public function test_nobody_else_can_edit_a_comment_not_even_an_admin(): void

@@ -23,7 +23,10 @@ class ToolCommentController extends Controller
     private const int PER_PAGE = 10;
 
     /**
-     * List the comments on a tool, newest first.
+     * List the comments on a tool, newest first, a page at a time by cursor:
+     * the next page starts after the last comment shown, so comments added or
+     * deleted in the meantime do not shift it (a page number would skip or
+     * repeat one). `meta.total` is the number of all comments.
      */
     public function index(Tool $tool): AnonymousResourceCollection
     {
@@ -31,11 +34,12 @@ class ToolCommentController extends Controller
 
         $comments = $tool->comments()
             ->with('user:id,name')
-            ->latest()
-            ->latest('id')
-            ->paginate(self::PER_PAGE);
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->cursorPaginate(self::PER_PAGE);
 
-        return ToolCommentResource::collection($comments);
+        return ToolCommentResource::collection($comments)
+            ->additional(['meta' => ['total' => $tool->comments()->count()]]);
     }
 
     /**
@@ -69,6 +73,8 @@ class ToolCommentController extends Controller
     {
         Gate::authorize('delete', $comment);
 
+        // The scoped binding already loaded the tool; the activity entry needs it.
+        $comment->setRelation('tool', $tool);
         $deleteComment->handle($comment, $request->user());
 
         return response()->noContent();

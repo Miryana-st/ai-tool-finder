@@ -9,6 +9,7 @@ use App\Services\ActivityLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -32,7 +33,8 @@ class AddToolImage
             return DB::transaction(function () use ($tool, $file, $path) {
                 $image = $tool->images()->create([
                     'path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
+                    // The column holds 255 characters; a longer name from the client would fail the insert.
+                    'original_name' => Str::limit($file->getClientOriginalName(), 255, ''),
                     'sort_order' => (int) $tool->images()->max('sort_order') + 1,
                 ]);
 

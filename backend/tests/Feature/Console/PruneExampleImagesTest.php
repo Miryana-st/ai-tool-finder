@@ -4,8 +4,10 @@ namespace Tests\Feature\Console;
 
 use App\Models\Tool\ExampleImage;
 use App\Models\Tool\Tool;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -92,6 +94,27 @@ class PruneExampleImagesTest extends TestCase
         $this->artisan('example-images:prune')->assertSuccessful();
 
         $this->assertModelMissing($image);
+    }
+
+    public function test_the_tools_are_read_once_however_many_images_there_are(): void
+    {
+        $images = collect(range(1, 5))->map(fn () => $this->image(hoursAgo: 48));
+        Tool::factory()->create(['examples' => $this->markdown($images[0])]);
+
+        $toolQueries = 0;
+        DB::listen(function (QueryExecuted $query) use (&$toolQueries) {
+            if (preg_match('/from [`"]?tools[`"]?/', $query->sql)) {
+                $toolQueries++;
+            }
+        });
+
+        $this->artisan('example-images:prune')
+            ->expectsOutput('Deleted 4 unused example image(s).')
+            ->assertSuccessful();
+
+        // One chunk of tools; the old version searched every tool's text once per image.
+        $this->assertSame(1, $toolQueries);
+        $this->assertModelExists($images[0]);
     }
 
     public function test_hours_must_be_positive(): void

@@ -12,7 +12,8 @@ import { formFieldClassName } from "@/styles/classNames";
 type ListState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "ready"; comments: ToolComment[]; page: number; lastPage: number; total: number };
+  // `nextCursor` continues after the last comment shown; null when all are shown.
+  | { status: "ready"; comments: ToolComment[]; nextCursor: string | null; total: number };
 
 // The comments on an approved tool: newest first, 10 at a time with "show more",
 // a form for a new comment, and editing or deleting where the user may.
@@ -25,13 +26,12 @@ export default function ToolComments({ toolId }: { toolId: number }) {
     const controller = new AbortController();
 
     api
-      .getToolComments(toolId, 1, controller.signal)
+      .getToolComments(toolId, undefined, controller.signal)
       .then((result) =>
         setState({
           status: "ready",
           comments: result.data,
-          page: result.meta.current_page,
-          lastPage: result.meta.last_page,
+          nextCursor: result.meta.next_cursor,
           total: result.meta.total,
         }),
       )
@@ -57,26 +57,24 @@ export default function ToolComments({ toolId }: { toolId: number }) {
     );
   }
 
-  const loadMore = async () => {
+  const loadMore = async (cursor: string) => {
     setIsLoadingMore(true);
     setLoadMoreError(false);
 
     try {
-      const result = await api.getToolComments(toolId, state.page + 1);
-      setState((current) => {
-        if (current.status !== "ready") {
-          return current;
-        }
-        // New comments shift the pages, so a comment can come again: keep it once.
-        const known = new Set(current.comments.map((comment) => comment.id));
-
-        return {
-          ...current,
-          comments: [...current.comments, ...result.data.filter((comment) => !known.has(comment.id))],
-          page: result.meta.current_page,
-          lastPage: result.meta.last_page,
-        };
-      });
+      // The cursor continues after the last comment shown, so comments added or deleted
+      // meanwhile neither repeat nor skip one (as page numbers would).
+      const result = await api.getToolComments(toolId, cursor);
+      setState((current) =>
+        current.status === "ready"
+          ? {
+              ...current,
+              comments: [...current.comments, ...result.data],
+              nextCursor: result.meta.next_cursor,
+              total: result.meta.total,
+            }
+          : current,
+      );
     } catch (error) {
       console.error("Could not load more comments.", error);
       setLoadMoreError(true);
@@ -120,9 +118,14 @@ export default function ToolComments({ toolId }: { toolId: number }) {
         </>
       )}
 
-      {state.page < state.lastPage && (
+      {state.nextCursor !== null && (
         <div className="flex flex-col items-center gap-2">
-          <Button variant="outline" onClick={() => void loadMore()} disabled={isLoadingMore} className="rounded-xl">
+          <Button
+            variant="outline"
+            onClick={() => state.nextCursor !== null && void loadMore(state.nextCursor)}
+            disabled={isLoadingMore}
+            className="rounded-xl"
+          >
             {isLoadingMore ? "Зареждане…" : "Покажи още коментари"}
           </Button>
           {loadMoreError && (

@@ -67,6 +67,25 @@ services:
     networks:
       - ai-tool-finder-network
 
+  # Runs the scheduled commands of routes/console.php (e.g. example-images:prune daily).
+  scheduler:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: ai-tool-finder-scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    command: php artisan schedule:work
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-tool-finder-network
+
   # Cache store (CACHE_STORE=redis). No published port: reachable only from the containers.
   redis:
     image: redis:7-alpine

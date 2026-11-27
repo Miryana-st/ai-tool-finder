@@ -36,17 +36,25 @@ class PruneExampleImages extends Command
             return self::FAILURE;
         }
 
+        $referenced = $this->referencedPaths();
+        $disk = Storage::disk('public');
         $deleted = 0;
 
         ExampleImage::query()
             ->where('created_at', '<', now()->subHours($hours))
-            ->chunkById(100, function ($images) use (&$deleted) {
+            ->chunkById(100, function ($images) use ($referenced, $disk, &$deleted) {
                 foreach ($images as $image) {
-                    if ($this->isReferenced($image)) {
+                    if (isset($referenced[$image->path])) {
                         continue;
                     }
 
-                    Storage::disk('public')->delete($image->path);
+                    // Keep the record while its file is still there, so the next run tries again.
+                    if (! $disk->delete($image->path) && $disk->exists($image->path)) {
+                        $this->warn("Could not delete {$image->path}; kept for the next run.");
+
+                        continue;
+                    }
+
                     $image->delete();
                     $deleted++;
                 }
@@ -58,12 +66,30 @@ class PruneExampleImages extends Command
     }
 
     /**
-     * Whether the examples of any tool, deleted ones included, contain the image's path.
+     * The example image paths the examples of any tool (deleted ones included)
+     * refer to, as keys. One pass over the tools, instead of one search of
+     * every tool's text per image.
+     *
+     * @return array<string, true>
      */
-    private function isReferenced(ExampleImage $image): bool
+    private function referencedPaths(): array
     {
-        return Tool::withTrashed()
-            ->where('examples', 'like', '%'.addcslashes($image->path, '%_\\').'%')
-            ->exists();
+        $paths = [];
+
+        Tool::withTrashed()
+            ->where('examples', 'like', '%examples/%')
+            ->select(['id', 'examples'])
+            ->chunkById(200, function ($tools) use (&$paths) {
+                foreach ($tools as $tool) {
+                    // Stored names are random letters and digits plus an extension (UploadedFile::store()).
+                    preg_match_all('#examples/[A-Za-z0-9]+\.[A-Za-z0-9]+#', (string) $tool->examples, $matches);
+
+                    foreach ($matches[0] as $path) {
+                        $paths[$path] = true;
+                    }
+                }
+            });
+
+        return $paths;
     }
 }

@@ -45,8 +45,31 @@ class ToolComment extends Model
      */
     public function isEdited(): bool
     {
-        return $this->updated_at !== null
-            && $this->created_at !== null
-            && $this->updated_at->gt($this->created_at);
+        return $this->edited_at !== null;
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'edited_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Mark the comment as edited when its text changes (not on the first save).
+     * `edited_at` is not fillable: only this sets it.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (ToolComment $comment) {
+            if ($comment->isDirty('body')) {
+                $comment->edited_at = now();
+            }
+        });
     }
 }

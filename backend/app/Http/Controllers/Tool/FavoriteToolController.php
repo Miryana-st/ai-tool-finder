@@ -28,10 +28,13 @@ class FavoriteToolController extends Controller
     }
 
     /**
-     * Remove the tool from the signed-in user's favorites.
+     * Remove the tool from the signed-in user's favorites. A tool the user
+     * cannot see answers 404, like marking it would.
      */
     public function destroy(Request $request, Tool $tool): JsonResponse
     {
+        Gate::authorize('view', $tool);
+
         $request->user()->favoriteTools()->detach($tool->id);
 
         return $this->favoriteInfo($request, $tool);
