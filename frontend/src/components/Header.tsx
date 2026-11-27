@@ -1,8 +1,8 @@
 import AuthButton from "./AuthButton";
 import Clock from "./Clock";
 import Logo from "./Logo";
-import UserId from "./UserId";
 
+// The simple header for guests and the session check (see AppShell).
 export default function Header() {
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -11,7 +11,6 @@ export default function Header() {
 
         <div className="flex items-center gap-4">
           <Clock />
-          <UserId />
           <AuthButton />
         </div>
       </div>
