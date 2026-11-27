@@ -13,12 +13,14 @@ import {
   Images,
   Info,
   Lightbulb,
+  MessageSquare,
   Palette,
   Pencil,
   Rocket,
   Server,
   ShieldCheck,
   Sparkles,
+  Star,
   Tags,
   Trash2,
   UserRound,
@@ -32,11 +34,14 @@ import { buttonVariants } from "@/components/ui/button";
 import RobotIllustration from "@/components/dashboard/RobotIllustration";
 import { useBreadcrumbLabel } from "@/context/BreadcrumbContext";
 import * as api from "@/lib/api";
-import type { FavoriteInfo, Tool } from "@/lib/api";
+import type { FavoriteInfo, RatingInfo, Tool } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import FavoriteButton from "./FavoriteButton";
 import Markdown from "./Markdown";
 import PendingBadge from "./PendingBadge";
+import RatingStars, { formatRating, ratingsCountLabel } from "./RatingStars";
+import ToolComments from "./ToolComments";
+import ToolRating from "./ToolRating";
 import ToolStateMessage from "./ToolStateMessage";
 import { useTool } from "./useTool";
 import { mutedTextClassName } from "@/styles/classNames";
@@ -75,6 +80,11 @@ function ToolView({ tool }: { tool: Tool }) {
     is_favorite: tool.is_favorite,
     favorites_count: tool.favorites_count,
   });
+  const [rating, setRating] = useState<RatingInfo>({
+    rating_average: tool.rating_average,
+    ratings_count: tool.ratings_count,
+    my_rating: tool.my_rating,
+  });
   const logo = tool.images[0];
 
   useBreadcrumbLabel(`/tools/${tool.slug}`, tool.name);
@@ -102,6 +112,8 @@ function ToolView({ tool }: { tool: Tool }) {
     { id: "how-to-use", label: "Как се използва", icon: Rocket },
     ...(tool.examples ? [{ id: "examples", label: "Примери", icon: Lightbulb }] : []),
     ...(tool.images.length > 0 ? [{ id: "screenshots", label: "Скрийншоти", icon: Images }] : []),
+    // Only approved tools can be rated and commented on.
+    ...(tool.is_approved ? [{ id: "comments", label: "Коментари", icon: MessageSquare }] : []),
   ];
 
   return (
@@ -159,6 +171,14 @@ function ToolView({ tool }: { tool: Tool }) {
                 В любими на {favorite.favorites_count}{" "}
                 {favorite.favorites_count === 1 ? "потребител" : "потребители"}
               </span>
+              {tool.is_approved && (
+                <a href="#rating" className="inline-flex items-center gap-1.5 hover:text-foreground">
+                  <RatingStars value={rating.rating_average} className="text-sm" />
+                  {rating.rating_average === null
+                    ? "Без оценки"
+                    : `${formatRating(rating.rating_average)} (${ratingsCountLabel(rating.ratings_count)})`}
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -241,9 +261,23 @@ function ToolView({ tool }: { tool: Tool }) {
               <Markdown>{tool.examples}</Markdown>
             </section>
           )}
+
+          {tool.is_approved && (
+            <section id="comments" className={cn(cardClassName, "flex scroll-mt-6 flex-col gap-4")}>
+              <SectionTitle icon={MessageSquare}>Коментари</SectionTitle>
+              <ToolComments toolId={tool.id} />
+            </section>
+          )}
         </div>
 
         <aside className="flex flex-col gap-6">
+          {tool.is_approved && (
+            <section id="rating" className={cn(cardClassName, "flex scroll-mt-6 flex-col gap-4")}>
+              <SectionTitle icon={Star}>Оценка</SectionTitle>
+              <ToolRating toolId={tool.id} rating={rating} onChange={setRating} />
+            </section>
+          )}
+
           <section className={cn(cardClassName, "flex flex-col gap-4")}>
             <SectionTitle icon={Info}>Детайли</SectionTitle>
             <dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-4 gap-y-3.5 text-sm">

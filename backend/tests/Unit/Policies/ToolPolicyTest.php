@@ -105,4 +105,33 @@ class ToolPolicyTest extends TestCase
     {
         $this->assertTrue($this->policy->create($this->otherUser));
     }
+
+    public function test_anyone_can_rate_and_comment_on_an_approved_tool(): void
+    {
+        $tool = $this->tool(approved: true);
+
+        foreach (['rate', 'comment'] as $ability) {
+            foreach ([$this->creator, $this->otherUser, $this->admin] as $user) {
+                $this->assertTrue($this->policy->{$ability}($user, $tool)->allowed(), "user {$user->id}: {$ability}");
+            }
+        }
+    }
+
+    public function test_a_pending_tool_cannot_be_rated_or_commented_on(): void
+    {
+        $tool = $this->tool(approved: false);
+
+        foreach (['rate', 'comment'] as $ability) {
+            // Those who see the pending tool are told why.
+            foreach ([$this->creator, $this->admin] as $user) {
+                $response = $this->policy->{$ability}($user, $tool);
+                $this->assertTrue($response->denied(), "user {$user->id}: {$ability}");
+                $this->assertNull($response->status(), "user {$user->id}: {$ability} is a 403");
+                $this->assertNotEmpty($response->message());
+            }
+
+            // For anybody else it does not exist.
+            $this->assertSame(404, $this->policy->{$ability}($this->otherUser, $tool)->status(), $ability);
+        }
+    }
 }

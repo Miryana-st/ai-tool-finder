@@ -77,6 +77,40 @@ class ToolPolicy
     }
 
     /**
+     * Determine whether the user can rate the tool. Any user can rate an
+     * approved tool, its creator included.
+     */
+    public function rate(User $user, Tool $tool): Response
+    {
+        return $this->interact($user, $tool, 'Only approved tools can be rated.');
+    }
+
+    /**
+     * Determine whether the user can comment on the tool. Any user can
+     * comment on an approved tool.
+     */
+    public function comment(User $user, Tool $tool): Response
+    {
+        return $this->interact($user, $tool, 'Only approved tools can be commented on.');
+    }
+
+    /**
+     * Ratings and comments are for approved tools only. A pending tool is
+     * refused with the reason to those who can see it, and does not exist
+     * (404) for anybody else.
+     */
+    private function interact(User $user, Tool $tool, string $pendingMessage): Response
+    {
+        if ($tool->isApproved()) {
+            return Response::allow();
+        }
+
+        return $this->isCreatorOrAdmin($user, $tool)
+            ? Response::deny($pendingMessage)
+            : Response::denyAsNotFound();
+    }
+
+    /**
      * Determine whether the user added the tool or is an admin.
      */
     private function isCreatorOrAdmin(User $user, Tool $tool): bool

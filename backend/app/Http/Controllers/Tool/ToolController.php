@@ -50,6 +50,7 @@ class ToolController extends Controller
         $tools = Tool::query()
             ->with(self::RELATIONS)
             ->withFavoriteInfo($user)
+            ->withRatingInfo($user)
             ->visibleTo($user)
             ->filter($request->validated())
             ->when($request->boolean('favorites'), fn ($query) => $query->favoriteOf($user))
@@ -85,6 +86,7 @@ class ToolController extends Controller
         $tools = Tool::pending()
             ->with(self::RELATIONS)
             ->withFavoriteInfo($request->user())
+            ->withRatingInfo($request->user())
             ->oldest()
             ->oldest('id')
             ->get();
@@ -184,6 +186,6 @@ class ToolController extends Controller
      */
     private function toolResource(Tool $tool, User $user): ToolResource
     {
-        return new ToolResource($tool->load(self::RELATIONS)->loadFavoriteInfo($user));
+        return new ToolResource($tool->load(self::RELATIONS)->loadFavoriteInfo($user)->loadRatingInfo($user));
     }
 }
