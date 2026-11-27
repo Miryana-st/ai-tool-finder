@@ -160,6 +160,7 @@ docker compose logs -f node                # Next.js dev server logs
 docker compose logs -f queue               # queue worker logs
 docker compose restart queue               # reload the worker after changing job code
 docker compose exec app php artisan test   # run backend tests
+docker compose exec app php artisan test --testsuite=Unit   # only the fast unit tests (no database)
 docker compose exec node npm run lint      # lint the frontend
 ```
 
